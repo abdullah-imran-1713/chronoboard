@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default theme: Dark */
+  --color-primary: #ffffff;
+  --color-secondary: #a0a0a0;
+  --color-bg: #0a0a0a;
+  --color-surface: #1a1a1a;
+  --color-text: #ffffff;
+  --color-muted: #9ca3af;
+
+  /* Font defaults */
+  --font-clock: system-ui, sans-serif;
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-clock: 6rem;
+  --font-weight-clock: 700;
+  --letter-spacing-clock: 0.05em;
+
+  /* Effects */
+  --glow-color: transparent;
+  --glow-intensity: 0px;
+  --shadow-color: transparent;
+  --shadow-intensity: 0px;
+}
+
+/* Keyboard focus ring for interactive elements */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Hide scrollbar but keep scroll */
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Clock glow + shadow effects (combined so both apply) */
+.clock-effects {
+  text-shadow:
+    0 0 var(--glow-intensity) var(--glow-color),
+    2px 2px var(--shadow-intensity) var(--shadow-color);
+}
