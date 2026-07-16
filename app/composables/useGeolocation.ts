@@ -24,7 +24,8 @@ export function useGeolocation() {
             resolve({ ok: false, reason: 'unavailable' })
           }
         },
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 },
+        // Match weather: allow cached position; avoid aggressive fresh-GPS timeouts
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 300_000 },
       )
     })
   }

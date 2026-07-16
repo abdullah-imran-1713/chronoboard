@@ -59,6 +59,14 @@
           </button>
         </div>
       </div>
+
+      <p
+        v-if="usingFallback"
+        class="text-[11px] font-ui text-center m-0 pt-1"
+        :style="{ color: 'var(--color-muted)' }"
+      >
+        Using default location (Lahore)
+      </p>
     </div>
   </BaseCard>
 </template>
@@ -66,7 +74,7 @@
 <script setup lang="ts">
 import { PRAYER_DISPLAY_ORDER } from '../../../types/prayer'
 
-const { prayers, nextPrayer, loading, error, asrSchool, init, setAsrSchool } = usePrayerTimes()
+const { prayers, nextPrayer, loading, error, usingFallback, asrSchool, init, setAsrSchool } = usePrayerTimes()
 
 onMounted(() => {
   init()

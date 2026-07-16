@@ -5,6 +5,15 @@ export default defineNuxtConfig({
     preset: process.env.VERCEL ? 'vercel' : undefined,
   },
 
+  // Vercel/Nuxt: also set here so Permissions-Policy survives nitro output merge
+  routeRules: {
+    '/**': {
+      headers: {
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self)',
+      },
+    },
+  },
+
   components: [
     { path: '~/components/core', pathPrefix: false },
     { path: '~/components/ui', pathPrefix: false },

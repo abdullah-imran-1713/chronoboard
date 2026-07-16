@@ -79,8 +79,8 @@ export function useIslamicFeatures() {
   }
 
   async function tryEnablePrayerTimesWidget(): Promise<boolean> {
-    const location = await requestUserLocation()
-    if (!location.ok) return false
+    // Prompt when the browser allows it; still enable so fallback times work on Vercel
+    await requestUserLocation()
     widgetStore.setWidgetEnabled(PRAYER_TIMES_WIDGET_ID, true)
     return true
   }
