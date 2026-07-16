@@ -6,7 +6,6 @@ import {
   type PrayerTimes,
 } from '../../types/prayer'
 import type { ClockFormat } from '../../types/clock'
-import { DEFAULT_WEATHER_LOCATION } from '../../types/weather'
 import { useGeolocation } from './useGeolocation'
 
 function cleanTime(time: string): string {
@@ -56,7 +55,6 @@ export function usePrayerTimes() {
   const prayers = ref<PrayerTimes | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
-  const usingFallback = ref(false)
   const lastCoords = ref<{ lat: number, lon: number } | null>(null)
 
   async function fetchPrayers(lat: number, lon: number, school: PrayerAsrSchool = settings.prayerAsrSchool) {
@@ -136,17 +134,16 @@ export function usePrayerTimes() {
 
     loading.value = true
     error.value = null
-    usingFallback.value = false
 
     const location = await requestUserLocation()
-    if (location.ok) {
-      await fetchPrayers(location.lat, location.lon)
+    if (!location.ok) {
+      error.value = 'Location needed for prayer times'
+      prayers.value = null
+      loading.value = false
       return
     }
 
-    // Same as weather: when browser/Vercel blocks geolocation, still show times
-    usingFallback.value = true
-    await fetchPrayers(DEFAULT_WEATHER_LOCATION.lat, DEFAULT_WEATHER_LOCATION.lon)
+    await fetchPrayers(location.lat, location.lon)
   }
 
   async function setAsrSchool(school: PrayerAsrSchool) {
@@ -162,7 +159,6 @@ export function usePrayerTimes() {
     nextPrayer,
     loading,
     error,
-    usingFallback,
     asrSchool: computed(() => settings.prayerAsrSchool),
     init,
     fetchPrayers,

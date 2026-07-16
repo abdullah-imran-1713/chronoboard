@@ -91,8 +91,6 @@ const { open, accept, decline, dismiss } = useIslamicFeatures()
 const toastMessage = ref('')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 
-const LOCATION_TOAST = 'Allow location to add Prayer Times'
-
 function showToast(message: string) {
   toastMessage.value = message
   if (toastTimer) clearTimeout(toastTimer)
@@ -104,8 +102,12 @@ function showToast(message: string) {
 
 async function onAccept() {
   const result = await accept()
-  if (result === 'location_denied') {
-    showToast(LOCATION_TOAST)
+  if (result === 'denied' || result === 'blocked') {
+    showToast(
+      result === 'blocked'
+        ? 'Location blocked — enable it in the address bar, then try again'
+        : 'Allow location to add this widget',
+    )
   }
 }
 

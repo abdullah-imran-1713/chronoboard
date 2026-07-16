@@ -133,21 +133,48 @@ function resetPositions() {
   showToast('Layout reset')
 }
 
-const LOCATION_TOAST = 'Allow location to add Prayer Times'
+const LOCATION_DENIED_TOAST = 'Allow location to add this widget'
+const LOCATION_BLOCKED_TOAST = 'Location blocked — enable it in the address bar, then try again'
+
+function denialToast(kind: 'denied' | 'blocked') {
+  return kind === 'blocked' ? LOCATION_BLOCKED_TOAST : LOCATION_DENIED_TOAST
+}
 
 function onTileClick(id: string, category: WidgetCategory) {
   const next = !widgetStore.isEnabled(id)
-  if (category === 'religious') {
-    void onReligiousTileClick(id, next)
+  if (!next) {
+    widgetStore.setWidgetEnabled(id, false)
     return
   }
-  widgetStore.setWidgetEnabled(id, next)
+
+  if (id === 'weather') {
+    void enableWeatherWidget()
+    return
+  }
+
+  if (category === 'religious') {
+    void onReligiousTileClick(id, true)
+    return
+  }
+
+  widgetStore.setWidgetEnabled(id, true)
+}
+
+async function enableWeatherWidget() {
+  const { ensureLocationAccess } = useGeolocation()
+  const outcome = await ensureLocationAccess('weather')
+  if (outcome.kind !== 'granted') {
+    showToast(denialToast(outcome.reason === 'blocked' ? 'blocked' : 'denied'))
+    return
+  }
+
+  widgetStore.setWidgetEnabled('weather', true)
 }
 
 async function onReligiousTileClick(id: string, next: boolean) {
   const result = await onReligiousWidgetToggle(id, next)
-  if (next && id === 'prayer-times' && result === 'location_denied') {
-    showToast(LOCATION_TOAST)
+  if (next && id === 'prayer-times' && (result === 'denied' || result === 'blocked')) {
+    showToast(denialToast(result))
   }
 }
 

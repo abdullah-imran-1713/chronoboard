@@ -8,7 +8,7 @@ export type IslamicIntent =
 const RELIGIOUS_WIDGET_IDS = ['prayer-times', 'quran-verse'] as const
 const PRAYER_TIMES_WIDGET_ID = 'prayer-times'
 
-export type ReligiousWidgetToggleResult = 'ok' | 'location_denied' | 'pending'
+export type ReligiousWidgetToggleResult = 'ok' | 'denied' | 'blocked' | 'pending'
 
 const modalOpen = ref(false)
 const pendingIntent = ref<IslamicIntent | null>(null)
@@ -16,7 +16,7 @@ const pendingIntent = ref<IslamicIntent | null>(null)
 export function useIslamicFeatures() {
   const settings = useSettingsStore()
   const widgetStore = useWidgetStore()
-  const { requestUserLocation } = useGeolocation()
+  const { ensureLocationAccess } = useGeolocation()
 
   const preference = computed(() => settings.islamicFeaturesPreference)
   const isEnabled = computed(() => settings.islamicFeaturesPreference === 'enabled')
@@ -78,11 +78,14 @@ export function useIslamicFeatures() {
     requestEnable({ kind: 'hijri' })
   }
 
-  async function tryEnablePrayerTimesWidget(): Promise<boolean> {
-    // Prompt when the browser allows it; still enable so fallback times work on Vercel
-    await requestUserLocation()
+  async function tryEnablePrayerTimesWidget(): Promise<ReligiousWidgetToggleResult> {
+    const outcome = await ensureLocationAccess('prayer')
+    if (outcome.kind !== 'granted') {
+      return outcome.reason === 'blocked' ? 'blocked' : 'denied'
+    }
+
     widgetStore.setWidgetEnabled(PRAYER_TIMES_WIDGET_ID, true)
-    return true
+    return 'ok'
   }
 
   async function onReligiousWidgetToggle(id: string, enabled: boolean): Promise<ReligiousWidgetToggleResult> {
@@ -95,8 +98,7 @@ export function useIslamicFeatures() {
 
     if (id === PRAYER_TIMES_WIDGET_ID) {
       if (settings.islamicFeaturesPreference === 'enabled') {
-        const granted = await tryEnablePrayerTimesWidget()
-        return granted ? 'ok' : 'location_denied'
+        return await tryEnablePrayerTimesWidget()
       }
 
       requestEnable({ kind: 'widget', id })
@@ -119,12 +121,12 @@ export function useIslamicFeatures() {
     let result: ReligiousWidgetToggleResult = 'ok'
     if (intent) {
       if (intent.kind === 'widget' && intent.id === PRAYER_TIMES_WIDGET_ID) {
-        const granted = await tryEnablePrayerTimesWidget()
-        result = granted ? 'ok' : 'location_denied'
+        // Close Islamic modal first so the location soft-ask can show on top
+        pendingIntent.value = null
+        modalOpen.value = false
+        return await tryEnablePrayerTimesWidget()
       }
-      else {
-        applyIntent(intent)
-      }
+      applyIntent(intent)
     }
 
     pendingIntent.value = null

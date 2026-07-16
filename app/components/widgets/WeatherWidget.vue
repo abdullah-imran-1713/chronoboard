@@ -27,20 +27,12 @@
           class="w-16 h-16"
         >
       </div>
-
-      <p
-        v-if="usingFallback"
-        class="text-xs font-ui"
-        :style="{ color: 'var(--color-muted)' }"
-      >
-        Using default location (Lahore)
-      </p>
     </div>
   </BaseCard>
 </template>
 
 <script setup lang="ts">
-const { weather, loading, error, usingFallback, init } = useWeather()
+const { weather, loading, error, init } = useWeather()
 
 onMounted(() => {
   init()
