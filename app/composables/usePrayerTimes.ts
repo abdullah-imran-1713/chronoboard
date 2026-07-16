@@ -6,6 +6,7 @@ import {
   type PrayerTimes,
 } from '../../types/prayer'
 import type { ClockFormat } from '../../types/clock'
+import { useGeolocation } from './useGeolocation'
 
 function cleanTime(time: string): string {
   return time.split(' ')[0]?.trim() ?? time
@@ -50,6 +51,7 @@ function schoolParam(school: PrayerAsrSchool): 0 | 1 {
 export function usePrayerTimes() {
   const now = inject(NOW_INJECTION_KEY)!
   const settings = useSettingsStore()
+  const { requestUserLocation } = useGeolocation()
   const prayers = ref<PrayerTimes | null>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -127,35 +129,21 @@ export function usePrayerTimes() {
     }
   })
 
-  function getUserLocation(): Promise<{ lat: number, lon: number }> {
-    return new Promise((resolve, reject) => {
-      if (!import.meta.client || !navigator.geolocation) {
-        reject(new Error('Geolocation not supported'))
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        err => reject(err),
-      )
-    })
-  }
-
   async function init() {
     if (!import.meta.client) return
 
     loading.value = true
     error.value = null
 
-    try {
-      const { lat, lon } = await getUserLocation()
-      await fetchPrayers(lat, lon)
-    }
-    catch {
+    const location = await requestUserLocation()
+    if (!location.ok) {
       error.value = 'Location needed for prayer times'
       prayers.value = null
       loading.value = false
+      return
     }
+
+    await fetchPrayers(location.lat, location.lon)
   }
 
   async function setAsrSchool(school: PrayerAsrSchool) {

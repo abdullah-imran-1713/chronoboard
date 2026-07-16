@@ -133,13 +133,22 @@ function resetPositions() {
   showToast('Layout reset')
 }
 
+const LOCATION_TOAST = 'Allow location to add Prayer Times'
+
 function onTileClick(id: string, category: WidgetCategory) {
   const next = !widgetStore.isEnabled(id)
   if (category === 'religious') {
-    onReligiousWidgetToggle(id, next)
+    void onReligiousTileClick(id, next)
     return
   }
   widgetStore.setWidgetEnabled(id, next)
+}
+
+async function onReligiousTileClick(id: string, next: boolean) {
+  const result = await onReligiousWidgetToggle(id, next)
+  if (next && id === 'prayer-times' && result === 'location_denied') {
+    showToast(LOCATION_TOAST)
+  }
 }
 
 onMounted(() => {
