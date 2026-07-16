@@ -1,0 +1,35 @@
+name: Alias clean production URL
+
+# Vercel’s managed hostname for this project is chronoboard-snowy.vercel.app.
+# chronoboard.vercel.app cannot be registered as a project domain (orphan
+# conflict), so we re-point it after every successful Production deploy.
+on:
+  deployment_status:
+
+jobs:
+  alias:
+    if: >
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Point chronoboard.vercel.app at this production deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ github.event.deployment_status.target_url }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "Missing secret VERCEL_TOKEN. Create one at https://vercel.com/account/tokens and add it as a repo secret."
+            exit 1
+          fi
+          if [ -z "$TARGET" ]; then
+            echo "No deployment target URL on this event."
+            exit 1
+          fi
+          npx --yes vercel@54 alias set "$TARGET" chronoboard.vercel.app \
+            --token="$VERCEL_TOKEN" \
+            --scope=abdullah-imran-1713s-projects
+          # Optional: drop the auto snowy alias so the clean URL is the public one
+          npx --yes vercel@54 alias remove chronoboard-snowy.vercel.app --yes \
+            --token="$VERCEL_TOKEN" \
+            --scope=abdullah-imran-1713s-projects || true
