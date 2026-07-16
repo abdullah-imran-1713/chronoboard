@@ -13,7 +13,6 @@ export type WidgetCategory =
   | 'productivity'
   | 'info'
   | 'religious'
-  | 'ambient'
   | 'system'
 
 export interface WidgetState {

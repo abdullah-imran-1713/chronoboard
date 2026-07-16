@@ -100,6 +100,15 @@ export function getFontLabel(family: string): string {
   return CLOCK_FONTS.find(f => f.family === family)?.label ?? family
 }
 
+export function pickRandomFontFamily(excludeFamily?: string): string {
+  const pool = excludeFamily
+    ? CLOCK_FONTS.filter(f => f.family !== excludeFamily)
+    : CLOCK_FONTS
+  const list = pool.length > 0 ? pool : CLOCK_FONTS
+  const index = Math.floor(Math.random() * list.length)
+  return list[index]!.family
+}
+
 function encodeGoogleFamily(name: string): string {
   return name.replace(/ /g, '+')
 }

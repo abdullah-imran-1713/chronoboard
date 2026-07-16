@@ -3,7 +3,7 @@ import {
   DEFAULT_WORLD_CLOCK_ZONES,
   FALLBACK_TIMEZONES,
   WORLD_CLOCK_STORAGE_KEY,
-} from '../../utils/widgets'
+} from '../../utils/worldClock'
 
 export function useWorldClock() {
   const now = inject(NOW_INJECTION_KEY)!

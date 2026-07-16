@@ -6,9 +6,9 @@
     :style="{ color: 'var(--color-muted)' }"
   >
     <p
-      class="font-ui"
+      class="font-ui px-1"
       :style="{
-        fontSize: 'calc(var(--font-size-clock) * 0.15)',
+        fontSize: 'clamp(0.65rem, calc(var(--font-size-clock) * 0.14), 0.95rem)',
         letterSpacing: '0.05em',
       }"
       :dir="locale === 'ar' ? 'rtl' : 'ltr'"

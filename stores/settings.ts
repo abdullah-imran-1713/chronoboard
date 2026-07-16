@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import type { ClockSettings } from '../types/clock'
 import type { DateFormat, HijriLocale } from '../types/date'
+import type { IslamicFeaturesPreference } from '../types/settings'
+import type { PrayerAsrSchool } from '../types/prayer'
 
 interface SettingsState {
   clock: ClockSettings
@@ -9,6 +11,9 @@ interface SettingsState {
   hijriLocale: HijriLocale
   showHijriDate: boolean
   showDate: boolean
+  islamicFeaturesPreference: IslamicFeaturesPreference
+  /** Asr calculation: Shafi (standard) or Hanafi */
+  prayerAsrSchool: PrayerAsrSchool
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -18,14 +23,21 @@ export const useSettingsStore = defineStore('settings', {
       showSeconds: true,
       blinkingColon: true,
       showDate: true,
-      showHijriDate: true,
+      showHijriDate: false,
     },
     dateFormat: 'full',
     dateLocale: 'en-US',
     hijriLocale: 'en',
-    showHijriDate: true,
+    showHijriDate: false,
     showDate: true,
+    islamicFeaturesPreference: null,
+    prayerAsrSchool: 'shafi',
   }),
+
+  getters: {
+    islamicFeaturesEnabled: (state): boolean => state.islamicFeaturesPreference === 'enabled',
+    islamicFeaturesHidden: (state): boolean => state.islamicFeaturesPreference === 'hidden',
+  },
 
   actions: {
     toggleFormat() {
@@ -46,6 +58,14 @@ export const useSettingsStore = defineStore('settings', {
 
     toggleHijriDate() {
       this.showHijriDate = !this.showHijriDate
+    },
+
+    setIslamicFeaturesPreference(value: IslamicFeaturesPreference) {
+      this.islamicFeaturesPreference = value
+    },
+
+    setPrayerAsrSchool(school: PrayerAsrSchool) {
+      this.prayerAsrSchool = school
     },
   },
 })

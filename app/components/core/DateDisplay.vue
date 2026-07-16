@@ -6,9 +6,9 @@
     :style="{ color: 'var(--color-secondary)' }"
   >
     <p
-      class="font-ui"
+      class="font-ui px-1"
       :style="{
-        fontSize: 'calc(var(--font-size-clock) * 0.2)',
+        fontSize: 'clamp(0.7rem, calc(var(--font-size-clock) * 0.18), 1.15rem)',
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
       }"

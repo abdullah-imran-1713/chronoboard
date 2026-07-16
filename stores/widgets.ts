@@ -105,15 +105,6 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     category: 'religious',
   },
   {
-    id: 'ambient-sounds',
-    name: 'Ambient Sounds',
-    description: 'Rain, cafe, nature sounds',
-    icon: 'mdi:music-note',
-    component: 'AmbientSoundsWidget',
-    defaultEnabled: false,
-    category: 'ambient',
-  },
-  {
     id: 'battery',
     name: 'Battery',
     description: 'Device battery level',
@@ -149,7 +140,6 @@ export const useWidgetStore = defineStore('widgets', {
         productivity: [],
         info: [],
         religious: [],
-        ambient: [],
         system: [],
       }
       for (const widget of WIDGET_REGISTRY) {

@@ -5,7 +5,7 @@
         v-if="isOpen"
         type="button"
         class="fixed inset-0 bg-black/50 z-40 border-none cursor-default"
-        aria-label="Close settings"
+        aria-label="Close widgets"
         @click="$emit('close')"
       />
     </Transition>
@@ -15,7 +15,7 @@
         v-if="isOpen"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="settings-title"
+        aria-labelledby="widgets-panel-title"
         tabindex="-1"
         ref="panelRef"
         class="settings-panel fixed right-0 top-0 h-full w-80 max-w-[90vw] z-50 flex flex-col font-ui"
@@ -24,15 +24,15 @@
           color: 'var(--color-text)',
         }"
       >
-        <div class="settings-panel-header sticky top-0 z-[2] flex items-center justify-between px-6 py-5">
-          <h2 id="settings-title" class="text-lg font-bold tracking-tight">
-            Settings
+        <div class="settings-panel-header sticky top-0 z-[2] flex items-center justify-between px-6 py-5 gap-3">
+          <h2 id="widgets-panel-title" class="text-lg font-bold tracking-tight m-0">
+            Widgets
           </h2>
           <button
             type="button"
-            class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer"
+            class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer flex-none"
             :style="{ color: 'var(--color-text)' }"
-            aria-label="Close settings"
+            aria-label="Close widgets"
             @click="$emit('close')"
           >
             <Icon name="mdi:close" size="20" />
@@ -40,15 +40,9 @@
         </div>
 
         <div class="settings-scroll flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          <ClockSettings class="settings-section" />
-          <ThemeSettings class="settings-section" />
-          <FontSettings class="settings-section" />
-          <EffectSettings class="settings-section" />
+          <WidgetManager />
 
-          <div class="settings-section flex gap-2.5">
-            <button type="button" class="cb-btn-muted" @click="resetAll">
-              Reset
-            </button>
+          <div class="settings-section flex justify-end">
             <button type="button" class="cb-btn-primary" @click="$emit('close')">
               Done
             </button>
@@ -69,26 +63,10 @@ defineEmits<{
 }>()
 
 const panelRef = ref<HTMLElement | null>(null)
-const settings = useSettingsStore()
-const themeStore = useThemeStore()
-const customization = useCustomizationStore()
-const widgetStore = useWidgetStore()
-const layoutStore = useLayoutStore()
 
 watch(() => props.isOpen, (open) => {
   if (open) {
     nextTick(() => panelRef.value?.focus())
   }
 })
-
-function resetAll() {
-  settings.$reset()
-  themeStore.$reset()
-  customization.$reset()
-  widgetStore.$reset()
-  layoutStore.$reset()
-  themeStore.applyTheme()
-  customization.applyToCSS()
-  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets'))
-}
 </script>

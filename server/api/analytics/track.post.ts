@@ -1,9 +1,15 @@
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
+  const config = useRuntimeConfig(event)
 
-  // In production, send to your analytics service
-  // Options: Plausible, Umami, or custom Supabase table
+  // Optional: forward to Plausible/Umami using config.analyticsSecret
+  if (config.analyticsSecret) {
+    // await $fetch('https://your-analytics-service/api/event', { ... })
+  }
 
-  console.log('Analytics event:', body)
+  if (import.meta.dev) {
+    console.log('Analytics event:', body)
+  }
+
   return { ok: true }
 })

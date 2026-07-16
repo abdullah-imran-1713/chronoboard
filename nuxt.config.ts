@@ -1,5 +1,9 @@
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV === 'development' },
+
+  nitro: {
+    preset: process.env.VERCEL ? 'vercel' : undefined,
+  },
 
   components: [
     { path: '~/components/core', pathPrefix: false },
@@ -23,6 +27,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     weatherApiKey: '',
     adminPassword: '',
+    analyticsSecret: '',
   },
 
   app: {
@@ -30,7 +35,7 @@ export default defineNuxtConfig({
       title: 'ChronoBoard — Premium Digital Clock & Dashboard',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'description', content: 'A beautiful, customizable digital clock and productivity dashboard for your screens.' },
         { name: 'theme-color', content: '#000000' },
         { property: 'og:title', content: 'ChronoBoard — Premium Digital Clock & Dashboard' },

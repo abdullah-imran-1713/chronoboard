@@ -1,15 +1,16 @@
 <template>
-  <div>
-    <label class="block text-sm font-ui mb-1" :style="{ color: 'var(--color-text)' }">
+  <div class="flex items-center justify-between gap-3">
+    <label
+      v-if="label"
+      class="text-sm font-ui flex-none"
+      :style="{ color: 'var(--color-text)' }"
+    >
       {{ label }}
     </label>
     <select
       :value="modelValue"
-      class="w-full px-3 py-2 rounded-lg text-sm font-ui border-none outline-none"
-      :style="{
-        backgroundColor: 'var(--color-surface)',
-        color: 'var(--color-text)',
-      }"
+      class="cb-select"
+      :class="label ? 'w-[150px]' : 'w-full'"
       :aria-label="label"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
@@ -27,7 +28,7 @@
 <script setup lang="ts">
 defineProps<{
   modelValue: string
-  label: string
+  label?: string
   options: { value: string, label: string }[]
 }>()
 

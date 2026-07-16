@@ -7,22 +7,75 @@ export interface ColorPalette {
 }
 
 export const COLOR_PALETTES: ColorPalette[] = [
-  { id: 'midnight-blue', name: 'Midnight Blue', colors: { bg: '#0d1b2a', surface: '#1a2d42', primary: '#e0fbfc', secondary: '#90e0ef', muted: '#4a8fa8' } },
-  { id: 'forest-dark', name: 'Forest Dark', colors: { bg: '#0a1f0a', surface: '#122912', primary: '#a8d5a2', secondary: '#6db56d', muted: '#3d7a3d' } },
-  { id: 'sunset-glow', name: 'Sunset Glow', colors: { bg: '#1a0a00', surface: '#2d1500', primary: '#ff6b35', secondary: '#ffb347', muted: '#cc4400' } },
-  { id: 'rose-gold', name: 'Rose Gold', colors: { bg: '#1a0508', surface: '#2d0d14', primary: '#f4c2c2', secondary: '#e8a0a0', muted: '#c97070' } },
-  { id: 'ocean-deep', name: 'Ocean Deep', colors: { bg: '#0a1628', surface: '#0f2240', primary: '#4fc3f7', secondary: '#81d4fa', muted: '#2980b9' } },
-  { id: 'purple-haze', name: 'Purple Haze', colors: { bg: '#1a0a2e', surface: '#2a1245', primary: '#ce93d8', secondary: '#ba68c8', muted: '#7b1fa2' } },
-  { id: 'emerald-city', name: 'Emerald City', colors: { bg: '#001a12', surface: '#002a1e', primary: '#00e5a0', secondary: '#00bfa5', muted: '#007a5e' } },
-  { id: 'golden-hour', name: 'Golden Hour', colors: { bg: '#1a1200', surface: '#2d2000', primary: '#ffd700', secondary: '#ffb300', muted: '#a07800' } },
-  { id: 'arctic-ice', name: 'Arctic Ice', colors: { bg: '#0a1520', surface: '#0f2030', primary: '#b3e5fc', secondary: '#81d4fa', muted: '#4fc3f7' } },
-  { id: 'cherry-blossom', name: 'Cherry Blossom', colors: { bg: '#1a0510', surface: '#2d0a1c', primary: '#ffb7c5', secondary: '#ff8fab', muted: '#cc3366' } },
-  { id: 'neon-city', name: 'Neon City', colors: { bg: '#050510', surface: '#0a0a1a', primary: '#00ff88', secondary: '#00cc6a', muted: '#008844' } },
-  { id: 'copper-rust', name: 'Copper Rust', colors: { bg: '#1a0800', surface: '#2d1200', primary: '#cd7f32', secondary: '#a0522d', muted: '#6b3a1f' } },
-  { id: 'lavender-dream', name: 'Lavender Dream', colors: { bg: '#100a1a', surface: '#1c1228', primary: '#d8b4fe', secondary: '#c084fc', muted: '#9333ea' } },
-  { id: 'mint-fresh', name: 'Mint Fresh', colors: { bg: '#061a10', surface: '#0a2818', primary: '#6ee7b7', secondary: '#34d399', muted: '#059669' } },
-  { id: 'volcanic', name: 'Volcanic', colors: { bg: '#1a0500', surface: '#2d0800', primary: '#ff4500', secondary: '#ff6a00', muted: '#cc3700' } },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    colors: {
+      bg: '#0b1220',
+      surface: '#152238',
+      primary: '#e8eef7',
+      secondary: '#8fa3bf',
+      muted: '#4a5d78',
+    },
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    colors: {
+      bg: '#121417',
+      surface: '#1c2026',
+      primary: '#e6e8eb',
+      secondary: '#9aa3ad',
+      muted: '#6b7380',
+    },
+  },
+  {
+    id: 'nord',
+    name: 'Nord',
+    colors: {
+      bg: '#2e3440',
+      surface: '#3b4252',
+      primary: '#eceff4',
+      secondary: '#88c0d0',
+      muted: '#6b7a8f',
+    },
+  },
+  {
+    id: 'sahara',
+    name: 'Sahara',
+    colors: {
+      bg: '#F2E8D9',
+      surface: '#e8dcc8',
+      primary: '#5C4033',
+      secondary: '#C9A87C',
+      muted: '#9a7a58',
+    },
+  },
+  {
+    id: 'lagoon',
+    name: 'Lagoon',
+    colors: {
+      bg: '#1C2B2B',
+      surface: '#263838',
+      primary: '#A8D5C2',
+      secondary: '#2E7D6E',
+      muted: '#1e554c',
+    },
+  },
+  {
+    id: 'luxe',
+    name: 'Luxe',
+    colors: {
+      bg: '#0E1628',
+      surface: '#1a2438',
+      primary: '#FFFAF0',
+      secondary: '#C8A84B',
+      muted: '#7a6830',
+    },
+  },
 ]
+
+export const PRESET_PAGE_SIZE = 3
 
 export function paletteToThemeColors(palette: ColorPalette): ThemeColors {
   return {

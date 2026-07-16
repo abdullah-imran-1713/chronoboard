@@ -1,3 +1,5 @@
+export type PrayerAsrSchool = 'shafi' | 'hanafi'
+
 export interface PrayerTimes {
   Fajr: string
   Sunrise: string

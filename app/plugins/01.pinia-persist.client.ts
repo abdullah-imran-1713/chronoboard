@@ -4,7 +4,7 @@ import type { Pinia } from 'pinia'
 export default defineNuxtPlugin(({ $pinia }) => {
   const pinia = $pinia as Pinia
 
-  const PERSIST_STORES = ['settings', 'theme', 'widgets', 'customization', 'layout']
+  const PERSIST_STORES = ['settings', 'theme', 'widgets', 'customization', 'layout', 'presets']
 
   pinia.use(({ store }) => {
     const storeId = store.$id

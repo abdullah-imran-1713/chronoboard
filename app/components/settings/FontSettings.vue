@@ -1,18 +1,17 @@
 <template>
-  <div class="space-y-3">
-    <h3 class="text-sm font-bold font-ui uppercase tracking-wider" :style="{ color: 'var(--color-muted)' }">
+  <div class="flex flex-col gap-3.5">
+    <h3 class="settings-section-title font-ui">
       Font
     </h3>
 
     <FontPicker
       :model-value="customization.fontFamily"
-      label="Font Family"
       @update:model-value="(v) => customization.setFont(v)"
     />
 
     <BaseSlider
       :model-value="fontSizeNumber"
-      label="Font Size"
+      label="Size"
       :min="2"
       :max="16"
       :step="0.5"
@@ -22,14 +21,8 @@
 
     <BaseSelect
       :model-value="customization.fontWeight"
-      label="Font Weight"
-      :options="[
-        { value: '300', label: 'Light (300)' },
-        { value: '400', label: 'Regular (400)' },
-        { value: '600', label: 'SemiBold (600)' },
-        { value: '700', label: 'Bold (700)' },
-        { value: '800', label: 'ExtraBold (800)' },
-      ]"
+      label="Weight"
+      :options="weightOptions"
       @update:model-value="(v) => customization.setFontWeight(v)"
     />
   </div>
@@ -41,4 +34,14 @@ const customization = useCustomizationStore()
 const fontSizeNumber = computed(() => {
   return parseFloat(customization.fontSize) || 6
 })
+
+const weightOptions = [
+  { value: '200', label: '200 · Thin' },
+  { value: '300', label: '300 · Light' },
+  { value: '400', label: '400 · Regular' },
+  { value: '500', label: '500 · Medium' },
+  { value: '600', label: '600 · Semibold' },
+  { value: '700', label: '700 · Bold' },
+  { value: '800', label: '800 · Heavy' },
+]
 </script>

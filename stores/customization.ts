@@ -19,7 +19,7 @@ export const useCustomizationStore = defineStore('customization', {
       if (!import.meta.client) return
       const root = document.documentElement
       root.style.setProperty('--font-clock', this.fontFamily)
-      root.style.setProperty('--font-size-clock', this.fontSize)
+      root.style.setProperty('--font-size-clock-pref', this.fontSize)
       root.style.setProperty('--font-weight-clock', this.fontWeight)
       root.style.setProperty('--letter-spacing-clock', this.letterSpacing)
       root.style.setProperty('--glow-color', this.glowColor)

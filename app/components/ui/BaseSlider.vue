@@ -1,35 +1,45 @@
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-1">
-      <label class="text-sm font-ui" :style="{ color: 'var(--color-text)' }">
-        {{ label }}
-      </label>
-      <span class="text-xs font-ui" :style="{ color: 'var(--color-muted)' }">
-        {{ displayValue }}
-      </span>
-    </div>
+  <div class="flex items-center gap-3">
+    <label
+      class="text-sm font-ui flex-none"
+      :class="compactValue ? 'w-24' : undefined"
+      :style="{ color: 'var(--color-text)' }"
+    >
+      {{ label }}
+    </label>
     <input
       type="range"
+      class="cb-range"
       :min="min"
       :max="max"
       :step="step"
       :value="modelValue"
-      class="w-full accent-white"
       :aria-label="label"
       @input="$emit('update:modelValue', Number(($event.target as HTMLInputElement).value))"
     >
+    <span
+      class="text-xs font-ui flex-none text-right tabular-nums"
+      :class="compactValue ? 'w-7' : 'w-[42px]'"
+      :style="{ color: 'var(--color-muted)' }"
+    >
+      {{ displayValue ?? modelValue }}
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   modelValue: number
   label: string
   min: number
   max: number
   step?: number
   displayValue?: string
-}>()
+  compactValue?: boolean
+}>(), {
+  step: 1,
+  compactValue: false,
+})
 
 defineEmits<{
   'update:modelValue': [value: number]
