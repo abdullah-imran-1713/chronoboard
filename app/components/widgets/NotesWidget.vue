@@ -6,7 +6,7 @@
       placeholder="Jot something down..."
       class="w-full resize-none rounded-lg px-3 py-2 text-sm font-ui outline-none border-none"
       :style="{
-        backgroundColor: 'color-mix(in srgb, var(--color-surface) 60%, transparent)',
+        backgroundColor: 'rgba(var(--color-surface-rgb), 0.6)',
         color: 'var(--color-text)',
       }"
       aria-label="Notes"

@@ -9,9 +9,9 @@
         <div
           class="desktop-tip-card pointer-events-auto w-full max-w-sm rounded-2xl p-4 font-ui"
           :style="{
-            backgroundColor: 'color-mix(in srgb, var(--color-surface) 94%, transparent)',
+            backgroundColor: 'rgba(var(--color-surface-rgb), 0.94)',
             color: 'var(--color-text)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 28%, transparent)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.28)',
             boxShadow: '0 16px 48px rgba(0,0,0,.4)',
             backdropFilter: 'blur(16px)',
           }"
@@ -20,7 +20,7 @@
             <div
               class="desktop-tip-icon flex-none w-9 h-9 rounded-xl flex items-center justify-center"
               :style="{
-                backgroundColor: 'color-mix(in srgb, var(--color-primary) 14%, transparent)',
+                backgroundColor: 'rgba(var(--color-primary-rgb), 0.14)',
                 color: 'var(--color-primary)',
               }"
             >

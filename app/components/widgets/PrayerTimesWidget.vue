@@ -12,7 +12,7 @@
       <div
         v-if="nextPrayer"
         class="text-center py-2 rounded-lg"
-        :style="{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)' }"
+        :style="{ backgroundColor: 'rgba(var(--color-primary-rgb), 0.1)' }"
       >
         <p class="text-xs font-ui" :style="{ color: 'var(--color-muted)' }">
           Next Prayer
@@ -80,8 +80,8 @@ onMounted(() => {
   padding: 2px;
   border-radius: 999px;
   gap: 1px;
-  background: color-mix(in srgb, var(--color-muted) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-muted) 20%, transparent);
+  background: rgba(var(--color-muted-rgb), 0.14);
+  border: 1px solid rgba(var(--color-muted-rgb), 0.2);
 }
 
 .prayer-school-opt {
@@ -105,7 +105,8 @@ onMounted(() => {
 
 .prayer-school-opt[data-active='true'] {
   color: var(--color-text);
+  background: var(--color-surface);
   background: color-mix(in srgb, var(--color-primary) 22%, var(--color-surface));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.35);
 }
 </style>

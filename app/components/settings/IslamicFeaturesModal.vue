@@ -21,7 +21,7 @@
           :style="{
             backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 20%, transparent)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.2)',
           }"
           @keydown.escape.stop="onDismiss"
         >
@@ -74,7 +74,7 @@
         :style="{
           backgroundColor: 'var(--color-surface)',
           color: 'var(--color-text)',
-          border: '1px solid color-mix(in srgb, var(--color-muted) 25%, transparent)',
+          border: '1px solid rgba(var(--color-muted-rgb), 0.25)',
           boxShadow: '0 8px 28px rgba(0,0,0,.35)',
         }"
         role="status"

@@ -62,7 +62,7 @@ function dayStyle(day: { isToday: boolean, isCurrentMonth: boolean }) {
     }
   }
   if (!day.isCurrentMonth) {
-    return { color: 'color-mix(in srgb, var(--color-muted) 50%, transparent)' }
+    return { color: 'rgba(var(--color-muted-rgb), 0.5)' }
   }
   return { color: 'var(--color-text)' }
 }

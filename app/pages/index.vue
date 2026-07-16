@@ -156,9 +156,9 @@ function toggleWidgets() {
 }
 
 const fabStyle = {
-  backgroundColor: 'color-mix(in srgb, var(--color-surface) 85%, transparent)',
+  backgroundColor: 'rgba(var(--color-surface-rgb), 0.85)',
   color: 'var(--color-text)',
-  borderColor: 'color-mix(in srgb, var(--color-muted) 20%, transparent)',
+  borderColor: 'rgba(var(--color-muted-rgb), 0.2)',
   backdropFilter: 'blur(14px)',
 }
 
@@ -194,6 +194,7 @@ useKeyboardShortcuts({
 }
 
 .board-hero {
+  top: 50vh;
   top: 50dvh;
   width: min(100%, 56rem);
   padding-inline: max(0.75rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));

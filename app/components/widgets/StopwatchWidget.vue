@@ -39,7 +39,7 @@ const buttonStyle = {
 }
 
 const mutedButtonStyle = {
-  backgroundColor: 'color-mix(in srgb, var(--color-muted) 30%, transparent)',
+  backgroundColor: 'rgba(var(--color-muted-rgb), 0.3)',
   color: 'var(--color-text)',
 }
 </script>

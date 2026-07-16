@@ -45,7 +45,7 @@
       class="cb-dropdown"
       role="listbox"
     >
-      <div class="p-2 border-b" :style="{ borderColor: 'color-mix(in srgb, var(--color-muted) 20%, transparent)' }">
+      <div class="p-2 border-b" :style="{ borderColor: 'rgba(var(--color-muted-rgb), 0.2)' }">
         <div
           class="flex items-center gap-2 rounded-md px-2.5 py-[7px]"
           :style="{ backgroundColor: 'var(--color-bg)' }"

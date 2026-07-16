@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-[100dvh] transition-colors duration-300"
+    class="min-h-screen transition-colors duration-300"
     :style="{ backgroundColor: 'var(--color-bg)' }"
   >
     <slot />

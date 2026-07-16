@@ -68,7 +68,7 @@ const { remaining, targetDate, setTarget, clear } = useCountdown()
 const targetInput = ref('')
 
 const mutedButtonStyle = {
-  backgroundColor: 'color-mix(in srgb, var(--color-muted) 30%, transparent)',
+  backgroundColor: 'rgba(var(--color-muted-rgb), 0.3)',
   color: 'var(--color-text)',
 }
 

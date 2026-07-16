@@ -111,7 +111,7 @@
             class="cb-icobtn flex items-center gap-1 rounded-full px-2.5 py-1 border-none cursor-pointer disabled:opacity-35 disabled:cursor-default"
             :style="{
               color: 'var(--color-text)',
-              background: 'color-mix(in srgb, var(--color-muted) 22%, transparent)',
+              background: 'rgba(var(--color-muted-rgb), 0.22)',
             }"
             :disabled="!canSavePreset || !!editId"
             :title="editId ? 'Finish editing to save a new preset' : saveButtonTitle"
@@ -458,7 +458,7 @@
           :style="{
             backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 25%, transparent)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.25)',
             boxShadow: '0 8px 28px rgba(0,0,0,.35)',
           }"
           role="status"
@@ -894,7 +894,7 @@ async function onImportFile(event: Event) {
 }
 
 .preset-sw-pill {
-  border: 1px solid color-mix(in srgb, var(--color-muted) 25%, transparent);
+  border: 1px solid rgba(var(--color-muted-rgb), 0.25);
   transition: box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -933,7 +933,7 @@ async function onImportFile(event: Event) {
 }
 
 .preset-io-btn {
-  border: 1px solid color-mix(in srgb, var(--color-muted) 35%, transparent);
+  border: 1px solid rgba(var(--color-muted-rgb), 0.35);
   background: transparent;
   color: var(--color-secondary);
   font-family: inherit;
@@ -947,7 +947,7 @@ async function onImportFile(event: Event) {
 
 .preset-io-btn:hover:not(:disabled) {
   color: var(--color-text);
-  border-color: color-mix(in srgb, var(--color-muted) 55%, transparent);
+  border-color: rgba(var(--color-muted-rgb), 0.55);
 }
 
 .preset-io-btn:disabled {

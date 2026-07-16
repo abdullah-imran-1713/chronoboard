@@ -5,6 +5,13 @@ export default defineNuxtConfig({
     preset: process.env.VERCEL ? 'vercel' : undefined,
   },
 
+  // Transpile client JS down so older browsers/WebViews (e.g. 2016 tablets) can run it
+  vite: {
+    build: {
+      target: 'es2019',
+    },
+  },
+
   // Vercel/Nuxt: also set here so Permissions-Policy survives nitro output merge
   routeRules: {
     '/**': {

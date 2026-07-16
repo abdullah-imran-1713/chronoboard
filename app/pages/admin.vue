@@ -38,8 +38,8 @@
         <div
           class="rounded-xl p-4"
           :style="{
-            backgroundColor: 'color-mix(in srgb, var(--color-surface) 80%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 20%, transparent)',
+            backgroundColor: 'rgba(var(--color-surface-rgb), 0.8)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.2)',
           }"
         >
           <p class="text-xs font-ui uppercase tracking-wider" :style="{ color: 'var(--color-muted)' }">
@@ -52,8 +52,8 @@
         <div
           class="rounded-xl p-4"
           :style="{
-            backgroundColor: 'color-mix(in srgb, var(--color-surface) 80%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 20%, transparent)',
+            backgroundColor: 'rgba(var(--color-surface-rgb), 0.8)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.2)',
           }"
         >
           <p class="text-xs font-ui uppercase tracking-wider" :style="{ color: 'var(--color-muted)' }">

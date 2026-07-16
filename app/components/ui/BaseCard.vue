@@ -2,8 +2,8 @@
   <div
     class="cb-card rounded-xl backdrop-blur-sm transition-all duration-200"
     :style="{
-      backgroundColor: 'color-mix(in srgb, var(--color-surface) 80%, transparent)',
-      border: '1px solid color-mix(in srgb, var(--color-muted) 20%, transparent)',
+      backgroundColor: 'rgba(var(--color-surface-rgb), 0.8)',
+      border: '1px solid rgba(var(--color-muted-rgb), 0.2)',
     }"
   >
     <div v-if="title" class="flex items-center gap-2 mb-2.5 sm:mb-3">

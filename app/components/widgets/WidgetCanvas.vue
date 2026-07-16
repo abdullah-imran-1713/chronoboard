@@ -6,7 +6,7 @@
     :data-dragging="draggingId ? 'true' : 'false'"
     :style="{
       height: `${boardHeightPx}px`,
-      minHeight: '100dvh',
+      minHeight: '100vh',
       '--widget-card-width': `${cardWidthPx}px`,
     }"
   >
@@ -466,12 +466,12 @@ onUnmounted(() => {
   background-image:
     linear-gradient(
       to right,
-      color-mix(in srgb, var(--color-muted) 18%, transparent) 1px,
+      rgba(var(--color-muted-rgb), 0.18) 1px,
       transparent 1px
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--color-muted) 18%, transparent) 1px,
+      rgba(var(--color-muted-rgb), 0.18) 1px,
       transparent 1px
     );
   background-size: 24px 24px;
@@ -481,14 +481,14 @@ onUnmounted(() => {
 
 .widget-hero-forbidden {
   border-radius: 16px;
-  border: 1.5px dashed color-mix(in srgb, var(--color-muted) 35%, transparent);
-  background: color-mix(in srgb, var(--color-muted) 6%, transparent);
+  border: 1.5px dashed rgba(var(--color-muted-rgb), 0.35);
+  background: rgba(var(--color-muted-rgb), 0.06);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .widget-hero-forbidden--active {
-  border-color: color-mix(in srgb, #ef4444 75%, transparent);
-  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border-color: rgba(239, 68, 68, 0.75);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .widget-board-item {
@@ -503,7 +503,7 @@ onUnmounted(() => {
   z-index: 20;
   cursor: grabbing;
   touch-action: none;
-  outline: 1.5px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline: 1.5px solid rgba(var(--color-primary-rgb), 0.55);
   outline-offset: 4px;
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
@@ -511,11 +511,11 @@ onUnmounted(() => {
 
 .widget-board-item--invalid {
   outline-color: #ef4444;
-  box-shadow: 0 12px 40px color-mix(in srgb, #ef4444 28%, transparent);
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.28);
 }
 
 .widget-board-item--blocked {
-  outline: 1.5px solid color-mix(in srgb, #ef4444 70%, transparent);
+  outline: 1.5px solid rgba(239, 68, 68, 0.7);
   outline-offset: 4px;
   border-radius: 14px;
 }
@@ -534,7 +534,7 @@ onUnmounted(() => {
   justify-content: center;
   cursor: pointer;
   color: var(--color-muted);
-  background: color-mix(in srgb, var(--color-bg) 75%, transparent);
+  background: rgba(var(--color-bg-rgb), 0.75);
   opacity: 0;
   transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
@@ -547,7 +547,7 @@ onUnmounted(() => {
 
 .widget-board-close:hover {
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  background: rgba(var(--color-surface-rgb), 0.95);
 }
 
 .widget-board-card {

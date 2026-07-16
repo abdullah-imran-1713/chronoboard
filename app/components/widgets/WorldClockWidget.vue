@@ -48,7 +48,7 @@
         class="text-xs font-ui w-full py-1 rounded"
         :style="{
           color: 'var(--color-primary)',
-          backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)',
+          backgroundColor: 'rgba(var(--color-primary-rgb), 0.1)',
         }"
         @click="onAddTimezone"
       >

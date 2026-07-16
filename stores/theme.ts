@@ -5,6 +5,26 @@ import type { ThemeName, ThemeColors, ColorScheme } from '../types/theme'
 
 const LEGACY_THEMES = new Set(['amoled', 'gradient'])
 
+/**
+ * Convert a hex color to an "r, g, b" triplet string.
+ * Used so we can express translucent tints as rgba(var(--x-rgb), a),
+ * which older browsers support (unlike color-mix()).
+ */
+function hexToRgbTriplet(hex: string): string {
+  let value = hex.trim().replace('#', '')
+  if (value.length === 3) {
+    value = value.split('').map(c => c + c).join('')
+  }
+  const int = Number.parseInt(value, 16)
+  if (value.length !== 6 || Number.isNaN(int)) {
+    return '128, 128, 128'
+  }
+  const r = (int >> 16) & 255
+  const g = (int >> 8) & 255
+  const b = int & 255
+  return `${r}, ${g}, ${b}`
+}
+
 interface ThemeState {
   currentTheme: ThemeName
   customColors: ThemeColors
@@ -127,6 +147,12 @@ export const useThemeStore = defineStore('theme', {
       root.style.setProperty('--color-surface', colors.surface)
       root.style.setProperty('--color-text', colors.text)
       root.style.setProperty('--color-muted', colors.muted)
+
+      // RGB triplets power rgba() tints as a legacy-safe alternative to color-mix()
+      root.style.setProperty('--color-primary-rgb', hexToRgbTriplet(colors.primary))
+      root.style.setProperty('--color-bg-rgb', hexToRgbTriplet(colors.bg))
+      root.style.setProperty('--color-surface-rgb', hexToRgbTriplet(colors.surface))
+      root.style.setProperty('--color-muted-rgb', hexToRgbTriplet(colors.muted))
 
       root.dataset.theme = this.currentTheme
       root.dataset.scheme = this.resolvedScheme

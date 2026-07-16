@@ -53,7 +53,7 @@
           :style="{
             backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
-            border: '1px solid color-mix(in srgb, var(--color-muted) 25%, transparent)',
+            border: '1px solid rgba(var(--color-muted-rgb), 0.25)',
             boxShadow: '0 8px 28px rgba(0,0,0,.35)',
           }"
           role="status"
@@ -219,8 +219,8 @@ onUnmounted(() => {
   min-height: 72px;
   padding: 10px 6px 8px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--color-muted) 22%, transparent);
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  border: 1px solid rgba(var(--color-muted-rgb), 0.22);
+  background: rgba(var(--color-bg-rgb), 0.7);
   color: var(--color-muted);
   cursor: pointer;
   font-family: inherit;
@@ -233,7 +233,7 @@ onUnmounted(() => {
 
 .widget-tile:hover {
   color: var(--color-text);
-  border-color: color-mix(in srgb, var(--color-muted) 40%, transparent);
+  border-color: rgba(var(--color-muted-rgb), 0.4);
 }
 
 .widget-tile:active {
@@ -242,9 +242,10 @@ onUnmounted(() => {
 
 .widget-tile[data-on='true'] {
   color: var(--color-text);
+  background: var(--color-bg);
   background: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg));
-  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-color: rgba(var(--color-primary-rgb), 0.55);
+  box-shadow: inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.18);
 }
 
 .widget-tile[data-on='true'] .widget-tile-icon {
