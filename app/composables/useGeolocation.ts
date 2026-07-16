@@ -69,7 +69,9 @@ export function useGeolocation() {
   /**
    * Call from a user click when enabling weather / prayer.
    * Triggers the browser native location prompt when permission is undecided.
-   * No custom soft-ask — one Allow only.
+   *
+   * Important: do NOT use maximumAge: 0 on first try — desktops often time out
+   * even when the site already has location permission.
    */
   async function ensureLocationAccess(_purpose: LocationPurpose): Promise<LocationAccessOutcome> {
     if (!import.meta.client) {
@@ -85,11 +87,20 @@ export function useGeolocation() {
       return { kind: 'denied', reason: 'blocked' }
     }
 
-    const result = await readPosition({
+    let result = await readPosition({
       enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 0,
+      timeout: 15000,
+      maximumAge: 300_000,
     })
+
+    // Retry once if the first fix timed out / was unavailable (common on desktop)
+    if (!result.ok && result.reason === 'unavailable') {
+      result = await readPosition({
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 600_000,
+      })
+    }
 
     if (result.ok) {
       cachedCoords.value = { lat: result.lat, lon: result.lon }
