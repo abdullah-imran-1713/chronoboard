@@ -196,7 +196,9 @@ useKeyboardShortcuts({
 .board-hero {
   top: 50vh;
   top: 50dvh;
-  width: min(100%, 56rem);
+  /* Hug clock/date content — was 56rem and left a huge empty drag-forbidden zone */
+  width: max-content;
+  max-width: min(100% - 1.5rem, 40rem);
   padding-inline: max(0.75rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
 }
 
