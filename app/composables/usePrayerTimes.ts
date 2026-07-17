@@ -8,6 +8,16 @@ import {
 import type { ClockFormat } from '../../types/clock'
 import { useGeolocation } from './useGeolocation'
 
+/** Shared across Prayer Times + Next Prayer so Shafi/Hanafi stays consistent */
+const sharedPrayers = ref<PrayerTimes | null>(null)
+const sharedLoading = ref(false)
+const sharedError = ref<string | null>(null)
+const sharedCoords = ref<{ lat: number, lon: number } | null>(null)
+const sharedFetchedSchool = ref<PrayerAsrSchool | null>(null)
+let initInFlight: Promise<void> | null = null
+let fetchInFlight: Promise<void> | null = null
+let schoolWatcherBound = false
+
 function cleanTime(time: string): string {
   return time.split(' ')[0]?.trim() ?? time
 }
@@ -48,19 +58,17 @@ function schoolParam(school: PrayerAsrSchool): 0 | 1 {
   return school === 'hanafi' ? 1 : 0
 }
 
-export function usePrayerTimes() {
-  const now = inject(NOW_INJECTION_KEY)!
-  const settings = useSettingsStore()
-  const { requestUserLocation } = useGeolocation()
-  const prayers = ref<PrayerTimes | null>(null)
-  const loading = ref(true)
-  const error = ref<string | null>(null)
-  const lastCoords = ref<{ lat: number, lon: number } | null>(null)
+async function fetchPrayersShared(
+  lat: number,
+  lon: number,
+  school: PrayerAsrSchool,
+): Promise<void> {
+  if (fetchInFlight) return fetchInFlight
 
-  async function fetchPrayers(lat: number, lon: number, school: PrayerAsrSchool = settings.prayerAsrSchool) {
-    loading.value = true
-    error.value = null
-    lastCoords.value = { lat, lon }
+  fetchInFlight = (async () => {
+    sharedLoading.value = true
+    sharedError.value = null
+    sharedCoords.value = { lat, lon }
 
     try {
       const today = new Date()
@@ -72,7 +80,7 @@ export function usePrayerTimes() {
       const response = await $fetch<AladhanTimingsResponse>(url)
       const timings = response.data.timings
 
-      prayers.value = {
+      sharedPrayers.value = {
         Fajr: cleanTime(timings.Fajr ?? ''),
         Sunrise: cleanTime(timings.Sunrise ?? ''),
         Dhuhr: cleanTime(timings.Dhuhr ?? ''),
@@ -80,43 +88,67 @@ export function usePrayerTimes() {
         Maghrib: cleanTime(timings.Maghrib ?? ''),
         Isha: cleanTime(timings.Isha ?? ''),
       }
+      sharedFetchedSchool.value = school
     }
     catch {
-      error.value = 'Failed to load prayer times'
-      prayers.value = null
+      sharedError.value = 'Failed to load prayer times'
+      sharedPrayers.value = null
+      sharedFetchedSchool.value = null
     }
     finally {
-      loading.value = false
+      sharedLoading.value = false
+      fetchInFlight = null
     }
+  })()
+
+  return fetchInFlight
+}
+
+export function usePrayerTimes() {
+  const now = inject(NOW_INJECTION_KEY)!
+  const settings = useSettingsStore()
+  const { requestUserLocation } = useGeolocation()
+
+  // One watcher for the whole app — school toggle in either widget updates both
+  if (import.meta.client && !schoolWatcherBound) {
+    schoolWatcherBound = true
+    watch(
+      () => settings.prayerAsrSchool,
+      (school) => {
+        if (!sharedCoords.value) return
+        if (sharedFetchedSchool.value === school) return
+        void fetchPrayersShared(sharedCoords.value.lat, sharedCoords.value.lon, school)
+      },
+    )
   }
 
   const displayPrayers = computed((): PrayerTimes | null => {
-    if (!prayers.value) return null
+    if (!sharedPrayers.value) return null
     const format = settings.clock.format
     return {
-      Fajr: formatPrayerClockTime(prayers.value.Fajr, format),
-      Sunrise: formatPrayerClockTime(prayers.value.Sunrise, format),
-      Dhuhr: formatPrayerClockTime(prayers.value.Dhuhr, format),
-      Asr: formatPrayerClockTime(prayers.value.Asr, format),
-      Maghrib: formatPrayerClockTime(prayers.value.Maghrib, format),
-      Isha: formatPrayerClockTime(prayers.value.Isha, format),
+      Fajr: formatPrayerClockTime(sharedPrayers.value.Fajr, format),
+      Sunrise: formatPrayerClockTime(sharedPrayers.value.Sunrise, format),
+      Dhuhr: formatPrayerClockTime(sharedPrayers.value.Dhuhr, format),
+      Asr: formatPrayerClockTime(sharedPrayers.value.Asr, format),
+      Maghrib: formatPrayerClockTime(sharedPrayers.value.Maghrib, format),
+      Isha: formatPrayerClockTime(sharedPrayers.value.Isha, format),
     }
   })
 
   const nextPrayer = computed((): NextPrayer | null => {
-    if (!prayers.value) return null
+    if (!sharedPrayers.value) return null
 
     const currentMinutes = now.value.getHours() * 60 + now.value.getMinutes()
     const format = settings.clock.format
 
     for (const name of NEXT_PRAYER_ORDER) {
-      const prayerMinutes = timeToMinutes(prayers.value[name])
+      const prayerMinutes = timeToMinutes(sharedPrayers.value[name])
 
       if (prayerMinutes > currentMinutes) {
         const diff = prayerMinutes - currentMinutes
         return {
           name,
-          time: formatPrayerClockTime(prayers.value[name], format),
+          time: formatPrayerClockTime(sharedPrayers.value[name], format),
           countdown: formatCountdown(diff),
         }
       }
@@ -124,7 +156,7 @@ export function usePrayerTimes() {
 
     return {
       name: 'Fajr',
-      time: formatPrayerClockTime(prayers.value.Fajr, format),
+      time: formatPrayerClockTime(sharedPrayers.value.Fajr, format),
       countdown: 'Tomorrow',
     }
   })
@@ -132,33 +164,52 @@ export function usePrayerTimes() {
   async function init() {
     if (!import.meta.client) return
 
-    loading.value = true
-    error.value = null
-
-    const location = await requestUserLocation()
-    if (!location.ok) {
-      error.value = 'Location needed for prayer times'
-      prayers.value = null
-      loading.value = false
+    // Already have data for the active school — both widgets can share it
+    if (
+      sharedPrayers.value
+      && sharedFetchedSchool.value === settings.prayerAsrSchool
+      && sharedCoords.value
+    ) {
       return
     }
 
-    await fetchPrayers(location.lat, location.lon)
+    if (initInFlight) return initInFlight
+
+    initInFlight = (async () => {
+      sharedLoading.value = true
+      sharedError.value = null
+
+      const location = await requestUserLocation()
+      if (!location.ok) {
+        sharedError.value = 'Location needed for prayer times'
+        sharedPrayers.value = null
+        sharedLoading.value = false
+        return
+      }
+
+      await fetchPrayersShared(location.lat, location.lon, settings.prayerAsrSchool)
+    })().finally(() => {
+      initInFlight = null
+    })
+
+    return initInFlight
   }
 
   async function setAsrSchool(school: PrayerAsrSchool) {
     if (settings.prayerAsrSchool === school) return
     settings.setPrayerAsrSchool(school)
-    if (lastCoords.value) {
-      await fetchPrayers(lastCoords.value.lat, lastCoords.value.lon, school)
-    }
+    // Watcher refetch handles sync for both widgets
+  }
+
+  async function fetchPrayers(lat: number, lon: number, school: PrayerAsrSchool = settings.prayerAsrSchool) {
+    await fetchPrayersShared(lat, lon, school)
   }
 
   return {
     prayers: displayPrayers,
     nextPrayer,
-    loading,
-    error,
+    loading: sharedLoading,
+    error: sharedError,
     asrSchool: computed(() => settings.prayerAsrSchool),
     init,
     fetchPrayers,

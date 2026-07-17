@@ -1,20 +1,21 @@
 <template>
   <div class="flex flex-col gap-5">
     <div class="flex items-center justify-end">
-      <button
-        type="button"
-        class="widget-reset-link border-none bg-transparent p-0 font-ui text-[11px]"
-        :class="canResetLayout ? 'cursor-pointer' : 'cursor-default'"
-        :style="{
-          color: 'var(--color-muted)',
-          opacity: canResetLayout ? 1 : 0.35,
-        }"
-        :disabled="!canResetLayout"
-        :title="resetTitle"
-        @click="resetPositions"
-      >
-        Reset layout
-      </button>
+      <CbHint :text="resetTitle" :blocked="!canResetLayout">
+        <button
+          type="button"
+          class="widget-reset-link border-none bg-transparent p-0 font-ui text-[11px]"
+          :class="canResetLayout ? 'cursor-pointer' : 'cursor-default'"
+          :style="{
+            color: 'var(--color-muted)',
+            opacity: canResetLayout ? 1 : 0.35,
+          }"
+          :disabled="!canResetLayout"
+          @click="resetPositions"
+        >
+          Reset layout
+        </button>
+      </CbHint>
     </div>
 
     <div
@@ -176,7 +177,11 @@ async function enableWeatherWidget() {
 
 async function onReligiousTileClick(id: string, next: boolean) {
   const result = await onReligiousWidgetToggle(id, next)
-  if (next && id === 'prayer-times' && (result === 'denied' || result === 'blocked')) {
+  if (
+    next
+    && (id === 'prayer-times' || id === 'next-prayer')
+    && (result === 'denied' || result === 'blocked')
+  ) {
     // blocked vs denied — islamic helper folds unavailable into denied
     showToast(denialToast(result === 'blocked' ? 'blocked' : 'denied'))
   }

@@ -64,9 +64,9 @@ export const useThemeStore = defineStore('theme', {
       return THEME_PRESETS[state.currentTheme].colors
     },
 
-    /** Quick sun/moon on main UI — only for forced Dark/Light */
-    showAppearanceToggle(state): boolean {
-      return state.currentTheme === 'dark' || state.currentTheme === 'light'
+    /** Quick sun/moon FAB — always available on the board */
+    showAppearanceToggle(): boolean {
+      return true
     },
   },
 
@@ -84,13 +84,10 @@ export const useThemeStore = defineStore('theme', {
       this.applyTheme()
     },
 
+    /** Flip light ↔ dark (also leaves System / Custom for an explicit scheme). */
     toggleAppearance() {
-      if (this.currentTheme === 'dark') {
-        this.setTheme('light')
-      }
-      else if (this.currentTheme === 'light') {
-        this.setTheme('dark')
-      }
+      const next = this.resolvedScheme === 'dark' ? 'light' : 'dark'
+      this.setTheme(next)
     },
 
     setCustomColor(key: keyof ThemeColors, value: string) {

@@ -5,8 +5,12 @@ export type IslamicIntent =
   | { kind: 'widget', id: string }
   | { kind: 'reenable' }
 
-const RELIGIOUS_WIDGET_IDS = ['prayer-times', 'quran-verse'] as const
-const PRAYER_TIMES_WIDGET_ID = 'prayer-times'
+const PRAYER_WIDGET_IDS = ['prayer-times', 'next-prayer'] as const
+const RELIGIOUS_WIDGET_IDS = [...PRAYER_WIDGET_IDS, 'quran-verse'] as const
+
+function isPrayerWidget(id: string): id is typeof PRAYER_WIDGET_IDS[number] {
+  return (PRAYER_WIDGET_IDS as readonly string[]).includes(id)
+}
 
 export type ReligiousWidgetToggleResult = 'ok' | 'denied' | 'blocked' | 'pending'
 
@@ -78,13 +82,13 @@ export function useIslamicFeatures() {
     requestEnable({ kind: 'hijri' })
   }
 
-  async function tryEnablePrayerTimesWidget(): Promise<ReligiousWidgetToggleResult> {
+  async function tryEnablePrayerWidget(id: typeof PRAYER_WIDGET_IDS[number]): Promise<ReligiousWidgetToggleResult> {
     const outcome = await ensureLocationAccess('prayer')
     if (outcome.kind !== 'granted') {
       return outcome.reason === 'blocked' ? 'blocked' : 'denied'
     }
 
-    widgetStore.setWidgetEnabled(PRAYER_TIMES_WIDGET_ID, true)
+    widgetStore.setWidgetEnabled(id, true)
     return 'ok'
   }
 
@@ -96,9 +100,9 @@ export function useIslamicFeatures() {
       return 'ok'
     }
 
-    if (id === PRAYER_TIMES_WIDGET_ID) {
+    if (isPrayerWidget(id)) {
       if (settings.islamicFeaturesPreference === 'enabled') {
-        return await tryEnablePrayerTimesWidget()
+        return await tryEnablePrayerWidget(id)
       }
 
       requestEnable({ kind: 'widget', id })
@@ -120,11 +124,11 @@ export function useIslamicFeatures() {
 
     let result: ReligiousWidgetToggleResult = 'ok'
     if (intent) {
-      if (intent.kind === 'widget' && intent.id === PRAYER_TIMES_WIDGET_ID) {
+      if (intent.kind === 'widget' && isPrayerWidget(intent.id)) {
         // Close Islamic modal first so the location soft-ask can show on top
         pendingIntent.value = null
         modalOpen.value = false
-        return await tryEnablePrayerTimesWidget()
+        return await tryEnablePrayerWidget(intent.id)
       }
       applyIntent(intent)
     }

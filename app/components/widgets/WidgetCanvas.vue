@@ -33,26 +33,54 @@
         'widget-board-item--dragging': draggingId === widget.id,
         'widget-board-item--invalid': draggingId === widget.id && placementInvalid,
         'widget-board-item--blocked': blockedIds.has(widget.id),
+        'widget-board-item--editing': editingId === widget.id,
       }"
       :style="itemStyle(widget.id)"
       :data-widget-id="widget.id"
       @pointerdown="onPointerDown($event, widget.id)"
     >
-      <button
-        type="button"
-        class="widget-board-close"
-        :aria-label="`Close ${widget.name}`"
-        title="Close"
-        @pointerdown.stop
-        @click.stop="closeWidget(widget.id)"
-      >
-        <Icon name="mdi:close" size="14" />
-      </button>
+      <div class="widget-board-actions">
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :aria-label="`Edit ${widget.name} size`"
+          :aria-expanded="editingId === widget.id"
+          @pointerdown.stop
+          @click.stop="toggleEdit(widget.id)"
+        >
+          <Icon name="mdi:pencil" size="13" />
+        </button>
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :aria-label="`Close ${widget.name}`"
+          @pointerdown.stop
+          @click.stop="closeWidget(widget.id)"
+        >
+          <Icon name="mdi:close" size="14" />
+        </button>
+      </div>
 
-      <component
-        :is="resolveWidget(widget.component)"
-        class="widget-board-card"
+      <WidgetSizePopover
+        v-if="editingId === widget.id"
+        :model-value="widgetScale(widget.id)"
+        @update:model-value="onScalePreview(widget.id, $event)"
+        @commit="onScaleCommit(widget.id, $event)"
       />
+
+      <div
+        class="widget-board-body"
+        :style="{
+          width: `min(${cardWidthPx}px, calc(100vw - 1.25rem))`,
+          zoom: widgetScale(widget.id),
+          '--widget-scale-fallback': String(widgetScale(widget.id)),
+        }"
+      >
+        <component
+          :is="resolveWidget(widget.component)"
+          class="widget-board-card"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -90,6 +118,8 @@ const blockedIds = ref<Set<string>>(new Set())
 const heroHintStyle = ref<Record<string, string> | null>(null)
 const cardWidthPx = ref(WIDGET_BOARD_CARD_WIDTH_PX)
 const boardHeightPx = ref(typeof window !== 'undefined' ? window.innerHeight : 800)
+const editingId = ref<string | null>(null)
+const scalePreview = ref<Record<string, number>>({})
 
 let pressTimer: ReturnType<typeof setTimeout> | null = null
 let pressId: string | null = null
@@ -126,15 +156,53 @@ function itemStyle(id: string) {
   return {
     left: `${pos.x}%`,
     top: `${pos.y}%`,
-    width: `min(${cardWidthPx.value}px, calc(100% - 1.25rem))`,
   }
+}
+
+function toggleEdit(id: string) {
+  if (editingId.value === id) {
+    clearScalePreview(id)
+  }
+  editingId.value = editingId.value === id ? null : id
+}
+
+function widgetScale(id: string) {
+  return scalePreview.value[id] ?? layoutStore.getSizeScale(id)
+}
+
+function clearScalePreview(id: string) {
+  const { [id]: _, ...rest } = scalePreview.value
+  scalePreview.value = rest
+}
+
+/** Live scale while sliding — no store write or board pack, so mouse drag stays smooth. */
+function onScalePreview(id: string, scale: number) {
+  scalePreview.value = { ...scalePreview.value, [id]: scale }
+}
+
+/** Pack once after preset click or when the custom slider is released. */
+function onScaleCommit(id: string, scale?: number) {
+  layoutStore.setWidgetScale(id, scale ?? widgetScale(id))
+  clearScalePreview(id)
+  nextTick(() => {
+    void refreshLayout({ forceAll: false })
+  })
+}
+
+function closeEditOnOutside(event: PointerEvent) {
+  if (!editingId.value) return
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest(`[data-widget-id="${editingId.value}"]`)) return
+  clearScalePreview(editingId.value)
+  editingId.value = null
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
   return Boolean(
     target.closest(
-      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"]',
+      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover]',
     ),
   )
 }
@@ -241,6 +309,7 @@ onMounted(async () => {
   window.addEventListener('chronoboard:repack-widgets', onRepackEvent)
   window.addEventListener('resize', onResize)
   window.addEventListener('orientationchange', onResize)
+  document.addEventListener('pointerdown', closeEditOnOutside, true)
 })
 
 function onRepackEvent() {
@@ -330,6 +399,7 @@ function evaluatePlacement(id: string, left: number, top: number, el: HTMLElemen
 }
 
 function closeWidget(id: string) {
+  if (editingId.value === id) editingId.value = null
   widgetStore.setWidgetEnabled(id, false)
   layoutStore.clearMoved(id)
 }
@@ -347,6 +417,8 @@ function clearPress() {
 }
 
 function beginDrag(id: string, item: HTMLElement, clientX: number, clientY: number) {
+  clearScalePreview(id)
+  editingId.value = null
   const rect = canvasRect()
   if (!rect) return
 
@@ -376,6 +448,7 @@ function onPointerDown(event: PointerEvent, id: string) {
   if (event.button !== 0) return
   if (isInteractiveTarget(event.target)) return
   if (draggingId.value) return
+  if (editingId.value === id) return
 
   const item = event.currentTarget as HTMLElement
   pressId = id
@@ -458,6 +531,7 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
   window.removeEventListener('pointercancel', onPointerUp)
+  document.removeEventListener('pointerdown', closeEditOnOutside, true)
 })
 </script>
 
@@ -495,6 +569,8 @@ onUnmounted(() => {
   position: absolute;
   touch-action: pan-y;
   z-index: 1;
+  width: max-content;
+  max-width: calc(100% - 1.25rem);
   transition: box-shadow 0.18s ease, outline-color 0.15s ease;
   cursor: grab;
 }
@@ -520,11 +596,23 @@ onUnmounted(() => {
   border-radius: 14px;
 }
 
-.widget-board-close {
+.widget-board-item--editing {
+  z-index: 8;
+  cursor: default;
+  touch-action: manipulation;
+}
+
+.widget-board-actions {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 3;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.widget-board-chrome-btn {
   width: 22px;
   height: 22px;
   border-radius: 999px;
@@ -539,15 +627,20 @@ onUnmounted(() => {
   transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.widget-board-item:hover .widget-board-close,
-.widget-board-item:focus-within .widget-board-close,
-.widget-board-close:focus-visible {
+.widget-board-item:hover .widget-board-chrome-btn,
+.widget-board-item:focus-within .widget-board-chrome-btn,
+.widget-board-item--editing .widget-board-chrome-btn,
+.widget-board-chrome-btn:focus-visible {
   opacity: 1;
 }
 
-.widget-board-close:hover {
+.widget-board-chrome-btn:hover {
   color: var(--color-text);
   background: rgba(var(--color-surface-rgb), 0.95);
+}
+
+.widget-board-body {
+  display: block;
 }
 
 .widget-board-card {
@@ -555,8 +648,16 @@ onUnmounted(() => {
 }
 
 @media (pointer: coarse) {
-  .widget-board-close {
+  .widget-board-chrome-btn {
     opacity: 0.85;
+  }
+}
+
+/* Firefox / older engines without CSS zoom — scale without clipping text */
+@supports not (zoom: 1) {
+  .widget-board-body {
+    transform: scale(var(--widget-scale-fallback, 1));
+    transform-origin: top left;
   }
 }
 </style>

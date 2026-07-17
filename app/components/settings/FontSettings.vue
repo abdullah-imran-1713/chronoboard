@@ -12,8 +12,8 @@
     <BaseSlider
       :model-value="fontSizeNumber"
       label="Size"
-      :min="2"
-      :max="16"
+      :min="CLOCK_FONT_SIZE_MIN_REM"
+      :max="CLOCK_FONT_SIZE_MAX_REM"
       :step="0.5"
       :display-value="`${fontSizeNumber}rem`"
       @update:model-value="(v) => customization.setFontSize(`${v}rem`)"
@@ -29,6 +29,8 @@
 </template>
 
 <script setup lang="ts">
+import { CLOCK_FONT_SIZE_MAX_REM, CLOCK_FONT_SIZE_MIN_REM } from '../../../types/settings'
+
 const customization = useCustomizationStore()
 
 const fontSizeNumber = computed(() => {

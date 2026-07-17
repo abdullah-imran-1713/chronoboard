@@ -41,7 +41,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    weatherApiKey: '',
     adminPassword: '',
     analyticsSecret: '',
   },

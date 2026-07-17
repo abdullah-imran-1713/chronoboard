@@ -33,41 +33,50 @@
 
     <WidgetCanvas @board-height="onBoardHeight" />
 
-    <div class="board-fab-rail" :class="{ 'board-fab-rail--idle': isIdle }">
+    <div
+      data-board-fab-rail
+      class="board-fab-rail"
+      :class="{
+        'board-fab-rail--idle': isIdle,
+        'board-fab-rail--panel-open': panelOpen,
+      }"
+    >
       <button
         v-if="layoutStore.showSettingsButton"
         type="button"
         class="board-fab cb-icobtn"
-        :style="fabStyle"
-        aria-label="Open settings"
-        @click="openSettings"
-      >
-        <Icon name="mdi:cog-outline" size="22" />
-      </button>
-
-      <button
-        type="button"
-        class="board-fab cb-icobtn"
-        :style="fabStyle"
-        aria-label="Open widgets"
-        @click="openWidgets"
-      >
-        <Icon name="mdi:widgets-outline" size="22" />
-      </button>
-
-      <button
-        v-if="themeStore.showAppearanceToggle"
-        type="button"
-        class="board-fab cb-icobtn"
-        :style="fabStyle"
-        :aria-label="themeStore.currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        @click="themeStore.toggleAppearance()"
+        :class="{ 'board-fab--active': showSettings }"
+        :style="fabButtonStyle(showSettings)"
+        :aria-label="showSettings ? 'Close settings' : 'Open settings'"
+        :aria-pressed="showSettings"
+        @click="toggleSettings"
       >
         <Icon
-          :name="themeStore.currentTheme === 'dark' ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'"
+          name="mdi:cog-outline"
           size="22"
+          class="board-fab-glyph board-fab-glyph--cog"
+          :class="{ 'board-fab-glyph--open': showSettings }"
         />
       </button>
+
+      <button
+        type="button"
+        class="board-fab cb-icobtn"
+        :class="{ 'board-fab--active': showWidgets }"
+        :style="fabButtonStyle(showWidgets)"
+        :aria-label="showWidgets ? 'Close widgets' : 'Open widgets'"
+        :aria-pressed="showWidgets"
+        @click="toggleWidgets"
+      >
+        <Icon
+          name="mdi:widgets-outline"
+          size="22"
+          class="board-fab-glyph board-fab-glyph--widgets"
+          :class="{ 'board-fab-glyph--open': showWidgets }"
+        />
+      </button>
+
+      <AppearanceToggle :fab-style="fabStyle" />
 
       <button
         type="button"
@@ -101,6 +110,7 @@ const layoutStore = useLayoutStore()
 const themeStore = useThemeStore()
 const showSettings = ref(false)
 const showWidgets = ref(false)
+const panelOpen = computed(() => showSettings.value || showWidgets.value)
 const { now } = useNow()
 provide(NOW_INJECTION_KEY, now)
 
@@ -162,6 +172,15 @@ const fabStyle = {
   backdropFilter: 'blur(14px)',
 }
 
+function fabButtonStyle(active: boolean) {
+  if (!active) return fabStyle
+  return {
+    ...fabStyle,
+    color: 'var(--color-primary)',
+    borderColor: 'rgba(var(--color-primary-rgb), 0.45)',
+  }
+}
+
 useKeyboardShortcuts({
   f: toggleFullscreen,
   s: toggleSettings,
@@ -196,9 +215,9 @@ useKeyboardShortcuts({
 .board-hero {
   top: 50vh;
   top: 50dvh;
-  /* Hug clock/date content — was 56rem and left a huge empty drag-forbidden zone */
+  /* Hug clock/date — grow with font size, never force the time onto two lines */
   width: max-content;
-  max-width: min(100% - 1.5rem, 40rem);
+  max-width: calc(100% - 1.5rem);
   padding-inline: max(0.75rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
 }
 
@@ -211,19 +230,27 @@ useKeyboardShortcuts({
 
 .board-fab-rail {
   position: fixed;
-  z-index: 30;
+  z-index: 55;
   right: calc(var(--fab-edge) + var(--safe-right));
   bottom: calc(var(--fab-edge) + var(--safe-bottom));
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
   gap: var(--fab-gap);
-  transition: opacity 0.35s ease;
+  transition:
+    opacity 0.35s ease,
+    transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .board-fab-rail--idle {
   opacity: 0;
   pointer-events: none;
+}
+
+.board-fab-rail--panel-open {
+  /* Clear the right drawer (w-80 / max 90vw) + small gap */
+  transform: translateX(calc(-1 * min(20rem, 90vw) - 0.75rem));
 }
 
 .board-fab {
@@ -236,11 +263,43 @@ useKeyboardShortcuts({
   align-items: center;
   justify-content: center;
   flex: none;
-  transition: opacity 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.28s ease,
+    color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .board-fab:hover {
   opacity: 1;
+}
+
+.board-fab--active {
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.22);
+  transform: scale(1.04);
+}
+
+.board-fab-glyph {
+  display: block;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.board-fab-glyph--cog.board-fab-glyph--open {
+  transform: rotate(90deg);
+}
+
+.board-fab-glyph--widgets.board-fab-glyph--open {
+  transform: scale(0.9) rotate(-12deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-fab-rail,
+  .board-fab,
+  .board-fab-glyph {
+    transition-duration: 0.01ms;
+  }
 }
 
 @media (max-width: 640px) {

@@ -1,6 +1,49 @@
-import type { OpenWeatherResponse } from '../../types/weather'
+import type { WeatherApiResponse } from '../../types/weather'
 
-export default defineEventHandler(async (event): Promise<OpenWeatherResponse> => {
+interface OpenMeteoForecast {
+  current: {
+    temperature_2m: number
+    apparent_temperature: number
+    relative_humidity_2m: number
+    weather_code: number
+    is_day: number
+    cloud_cover: number
+  }
+  daily: {
+    sunrise: string[]
+    sunset: string[]
+  }
+}
+
+interface ReverseGeo {
+  city?: string
+  locality?: string
+  principalSubdivision?: string
+  countryName?: string
+}
+
+function toUnixSeconds(isoLocal: string): number {
+  const ms = Date.parse(isoLocal)
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : Math.floor(Date.now() / 1000)
+}
+
+async function resolveCityName(lat: number, lon: number): Promise<string> {
+  try {
+    const geo = await $fetch<ReverseGeo>('https://api.bigdatacloud.net/data/reverse-geocode-client', {
+      params: {
+        latitude: lat,
+        longitude: lon,
+        localityLanguage: 'en',
+      },
+    })
+    return geo.city || geo.locality || geo.principalSubdivision || 'Your location'
+  }
+  catch {
+    return 'Your location'
+  }
+}
+
+export default defineEventHandler(async (event): Promise<WeatherApiResponse> => {
   const query = getQuery(event)
   const { lat, lon } = query
 
@@ -15,23 +58,42 @@ export default defineEventHandler(async (event): Promise<OpenWeatherResponse> =>
     throw createError({ statusCode: 400, message: 'lat and lon must be valid numbers' })
   }
 
-  const apiKey = useRuntimeConfig(event).weatherApiKey
-  if (!apiKey) {
-    throw createError({ statusCode: 500, message: 'Weather API key not configured' })
-  }
-
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`
-
   try {
-    return await $fetch<OpenWeatherResponse>(url)
-  } catch (error: unknown) {
-    const fetchError = error as { statusCode?: number, data?: { message?: string } }
-    const statusCode = fetchError.statusCode ?? 502
-    const message = fetchError.data?.message ?? 'Failed to fetch weather data'
+    const [forecast, city] = await Promise.all([
+      $fetch<OpenMeteoForecast>('https://api.open-meteo.com/v1/forecast', {
+        params: {
+          latitude,
+          longitude,
+          current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,cloud_cover',
+          daily: 'sunrise,sunset',
+          timezone: 'auto',
+          forecast_days: 1,
+        },
+      }),
+      resolveCityName(latitude, longitude),
+    ])
 
+    const current = forecast.current
+    const sunriseIso = forecast.daily.sunrise[0]
+    const sunsetIso = forecast.daily.sunset[0]
+
+    return {
+      name: city,
+      temp: current.temperature_2m,
+      feelsLike: current.apparent_temperature,
+      humidity: current.relative_humidity_2m,
+      weatherCode: current.weather_code,
+      isDay: current.is_day === 1,
+      cloudPercent: current.cloud_cover,
+      sunrise: sunriseIso ? toUnixSeconds(sunriseIso) : Math.floor(Date.now() / 1000),
+      sunset: sunsetIso ? toUnixSeconds(sunsetIso) : Math.floor(Date.now() / 1000),
+    }
+  }
+  catch (error: unknown) {
+    const fetchError = error as { statusCode?: number, data?: { message?: string }, message?: string }
     throw createError({
-      statusCode: statusCode === 401 ? 502 : statusCode,
-      message: statusCode === 401 ? 'Weather service authentication failed' : message,
+      statusCode: fetchError.statusCode && fetchError.statusCode < 500 ? fetchError.statusCode : 502,
+      message: fetchError.data?.message ?? fetchError.message ?? 'Failed to fetch weather data',
     })
   }
 })

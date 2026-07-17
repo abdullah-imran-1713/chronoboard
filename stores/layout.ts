@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
-import type { LayoutSettings, WidgetBoardPosition } from '../types/settings'
+import type { LayoutSettings, WidgetBoardPosition, WidgetSizePreset } from '../types/settings'
 import {
   WIDGET_BOARD_CARD_MIN_WIDTH_PX,
   WIDGET_BOARD_CARD_WIDTH_PX,
   WIDGET_BOARD_MAX_COLS,
+  WIDGET_SIZE_SCALE,
+  clampWidgetScale,
+  normalizeWidgetScale,
 } from '../types/settings'
 
 /** Bump to invalidate layouts that clamped widgets into the clock */
@@ -52,6 +55,7 @@ export const useLayoutStore = defineStore('layout', {
     showSettingsButton: true,
     widgetPositions: {},
     widgetMoved: {},
+    widgetSizes: {},
     widgetLayoutRev: 0,
   }),
 
@@ -63,10 +67,27 @@ export const useLayoutStore = defineStore('layout', {
     wasMoved: (state) => {
       return (id: string): boolean => !!state.widgetMoved[id]
     },
+
+    getSize: (state) => {
+      return (id: string): number => normalizeWidgetScale((state.widgetSizes ?? {})[id])
+    },
+
+    getSizeScale: (state) => {
+      return (id: string): number => normalizeWidgetScale((state.widgetSizes ?? {})[id])
+    },
   },
 
   actions: {
     migrateLayoutRev() {
+      if (!this.widgetSizes) this.widgetSizes = {}
+      // Migrate any legacy S/M/L letters → numeric scale
+      const next: Record<string, number> = {}
+      for (const [id, raw] of Object.entries(this.widgetSizes as Record<string, unknown>)) {
+        const scale = normalizeWidgetScale(raw)
+        if (scale !== 1) next[id] = scale
+      }
+      this.widgetSizes = next
+
       if ((this.widgetLayoutRev ?? 0) >= WIDGET_LAYOUT_REV) return false
       this.widgetPositions = {}
       this.widgetMoved = {}
@@ -82,6 +103,21 @@ export const useLayoutStore = defineStore('layout', {
       if (options?.moved) {
         this.widgetMoved[id] = true
       }
+    },
+
+    setWidgetScale(id: string, scale: number) {
+      if (!this.widgetSizes) this.widgetSizes = {}
+      const next = clampWidgetScale(scale)
+      if (next === 1) {
+        const { [id]: _, ...rest } = this.widgetSizes
+        this.widgetSizes = rest
+        return
+      }
+      this.widgetSizes = { ...this.widgetSizes, [id]: next }
+    },
+
+    setWidgetSize(id: string, size: WidgetSizePreset) {
+      this.setWidgetScale(id, WIDGET_SIZE_SCALE[size])
     },
 
     /**
@@ -225,6 +261,7 @@ export const useLayoutStore = defineStore('layout', {
     resetWidgetPositions() {
       this.widgetPositions = {}
       this.widgetMoved = {}
+      this.widgetSizes = {}
     },
   },
 })

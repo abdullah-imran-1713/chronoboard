@@ -4,9 +4,9 @@
       <button
         v-if="isOpen"
         type="button"
-        class="fixed inset-0 bg-black/50 z-40 border-none cursor-default"
+        class="panel-backdrop fixed inset-0 bg-black/50 z-40 border-none cursor-default"
         aria-label="Close widgets"
-        @click="$emit('close')"
+        @click="emitClose"
       />
     </Transition>
 
@@ -33,7 +33,7 @@
             class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer flex-none"
             :style="{ color: 'var(--color-text)' }"
             aria-label="Close widgets"
-            @click="$emit('close')"
+            @click="emitClose"
           >
             <Icon name="mdi:close" size="20" />
           </button>
@@ -43,7 +43,7 @@
           <WidgetManager />
 
           <div class="settings-section flex justify-end">
-            <button type="button" class="cb-btn-primary" @click="$emit('close')">
+            <button type="button" class="cb-btn-primary" @click="emitClose">
               Done
             </button>
           </div>
@@ -58,11 +58,17 @@ const props = defineProps<{
   isOpen: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
 
+function emitClose() {
+  emit('close')
+}
+
 const panelRef = ref<HTMLElement | null>(null)
+
+usePanelDismiss(() => props.isOpen, panelRef, emitClose)
 
 watch(() => props.isOpen, (open) => {
   if (open) {

@@ -6,7 +6,7 @@
   >
     <span class="sr-only" aria-live="polite" aria-atomic="true">{{ spokenTime }}</span>
     <div
-      class="font-clock flex flex-wrap items-baseline justify-center clock-effects max-w-[100vw] px-2"
+      class="font-clock flex flex-nowrap items-baseline justify-center whitespace-nowrap clock-effects max-w-[100vw] px-2"
       :style="{
         fontSize: 'var(--font-size-clock)',
         fontWeight: 'var(--font-weight-clock)',

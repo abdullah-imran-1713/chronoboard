@@ -8,9 +8,12 @@
   >
     <div v-if="title" class="flex items-center gap-2 mb-2.5 sm:mb-3">
       <Icon v-if="icon" :name="icon" size="16" :style="{ color: 'var(--color-muted)' }" />
-      <span class="text-xs font-ui uppercase tracking-wider" :style="{ color: 'var(--color-muted)' }">
+      <span class="text-xs font-ui uppercase tracking-wider flex-1 min-w-0" :style="{ color: 'var(--color-muted)' }">
         {{ title }}
       </span>
+      <div v-if="$slots.actions" class="flex-none flex items-center">
+        <slot name="actions" />
+      </div>
     </div>
 
     <slot />

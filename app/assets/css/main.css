@@ -425,3 +425,8 @@ body {
 .settings-drawer-leave-active {
   animation: cb-drawer 0.3s cubic-bezier(0.4, 0, 0.2, 1) both reverse;
 }
+
+.panel-backdrop {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

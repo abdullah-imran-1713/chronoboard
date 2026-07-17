@@ -1,27 +1,27 @@
 export interface WeatherData {
   temp: number
   description: string
+  /** MDI icon name for UI */
   icon: string
+  /** Synthetic day/night code (01d / 01n) for scheduling helpers */
+  iconCode: string
   city: string
   humidity: number
   feelsLike: number
+  /** Unix seconds (UTC) — used to refresh day/night icon at boundaries */
+  sunrise: number
+  sunset: number
 }
 
-export interface OpenWeatherResponse {
+/** Normalized payload from our /api/weather route */
+export interface WeatherApiResponse {
   name: string
-  main: {
-    temp: number
-    feels_like: number
-    humidity: number
-  }
-  weather: Array<{
-    description: string
-    icon: string
-  }>
+  temp: number
+  feelsLike: number
+  humidity: number
+  weatherCode: number
+  isDay: boolean
+  cloudPercent: number
+  sunrise: number
+  sunset: number
 }
-
-export const DEFAULT_WEATHER_LOCATION = {
-  lat: 31.5204,
-  lon: 74.3587,
-  label: 'Lahore',
-} as const

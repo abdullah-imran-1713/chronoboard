@@ -1,6 +1,17 @@
 import { defineStore } from 'pinia'
 import { loadGoogleFontForFamily } from '../utils/fonts'
-import type { CustomizationSettings } from '../types/settings'
+import {
+  CLOCK_FONT_SIZE_MAX_REM,
+  CLOCK_FONT_SIZE_MIN_REM,
+  type CustomizationSettings,
+} from '../types/settings'
+
+function clampClockFontSize(size: string): string {
+  const value = parseFloat(size)
+  if (Number.isNaN(value)) return '6rem'
+  const clamped = Math.min(CLOCK_FONT_SIZE_MAX_REM, Math.max(CLOCK_FONT_SIZE_MIN_REM, value))
+  return `${clamped}rem`
+}
 
 export const useCustomizationStore = defineStore('customization', {
   state: (): CustomizationSettings => ({
@@ -17,6 +28,7 @@ export const useCustomizationStore = defineStore('customization', {
   actions: {
     applyToCSS() {
       if (!import.meta.client) return
+      this.fontSize = clampClockFontSize(this.fontSize)
       const root = document.documentElement
       root.style.setProperty('--font-clock', this.fontFamily)
       root.style.setProperty('--font-size-clock-pref', this.fontSize)
@@ -35,7 +47,7 @@ export const useCustomizationStore = defineStore('customization', {
     },
 
     setFontSize(size: string) {
-      this.fontSize = size
+      this.fontSize = clampClockFontSize(size)
       this.applyToCSS()
     },
 

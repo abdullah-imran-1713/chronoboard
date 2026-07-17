@@ -48,7 +48,14 @@
             <Icon name="mdi:chevron-left" size="20" />
           </button>
 
-          <div class="preset-viewport flex-1 min-w-0 overflow-hidden">
+          <div
+            class="preset-viewport flex-1 min-w-0 overflow-hidden"
+            @pointerdown="builtinSwipe.onPointerDown"
+            @pointermove="builtinSwipe.onPointerMove"
+            @pointerup="builtinSwipe.onPointerUp"
+            @pointercancel="builtinSwipe.onPointerCancel"
+            @click.capture="builtinSwipe.onClickCapture"
+          >
             <div
               class="preset-track flex"
               :class="{ 'preset-track--animate': animateSlide }"
@@ -106,21 +113,25 @@
           <p class="settings-subsection-title font-ui">
             Colors
           </p>
-          <button
-            type="button"
-            class="cb-icobtn flex items-center gap-1 rounded-full px-2.5 py-1 border-none cursor-pointer disabled:opacity-35 disabled:cursor-default"
-            :style="{
-              color: 'var(--color-text)',
-              background: 'rgba(var(--color-muted-rgb), 0.22)',
-            }"
-            :disabled="!canSavePreset || !!editId"
-            :title="editId ? 'Finish editing to save a new preset' : saveButtonTitle"
-            aria-label="Save as preset"
-            @click="openSaveForm"
+          <CbHint
+            :text="editId ? 'Finish editing to save a new preset' : saveButtonTitle"
+            :blocked="!canSavePreset || !!editId"
           >
-            <Icon name="mdi:plus" size="16" />
-            <span class="text-[11px] font-semibold">Save</span>
-          </button>
+            <button
+              type="button"
+              class="cb-icobtn flex items-center gap-1 rounded-full px-2.5 py-1 border-none cursor-pointer disabled:opacity-35 disabled:cursor-default"
+              :style="{
+                color: 'var(--color-text)',
+                background: 'rgba(var(--color-muted-rgb), 0.22)',
+              }"
+              :disabled="!canSavePreset || !!editId"
+              aria-label="Save as preset"
+              @click="openSaveForm"
+            >
+              <Icon name="mdi:plus" size="16" />
+              <span class="text-[11px] font-semibold">Save</span>
+            </button>
+          </CbHint>
         </div>
 
         <p
@@ -199,16 +210,20 @@
           <p class="settings-subsection-title font-ui m-0">
             My presets
           </p>
-          <button
+          <CbHint
             v-if="presetsStore.userPresets.length === 0"
-            type="button"
-            class="cb-icobtn w-5 h-5 rounded border-none bg-transparent flex items-center justify-center cursor-default p-0"
-            :style="{ color: 'var(--color-muted)' }"
-            title="Save colors to keep a combo on this device."
-            aria-label="About my presets"
+            text="Save colors to keep a combo on this device."
+            mode="info"
           >
-            <Icon name="mdi:information-outline" size="14" />
-          </button>
+            <button
+              type="button"
+              class="cb-icobtn w-5 h-5 rounded border-none bg-transparent flex items-center justify-center cursor-default p-0"
+              :style="{ color: 'var(--color-muted)' }"
+              aria-label="About my presets"
+            >
+              <Icon name="mdi:information-outline" size="14" />
+            </button>
+          </CbHint>
         </div>
 
         <p
@@ -253,8 +268,8 @@
             </button>
 
             <div
-              class="absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
-              :class="editId === preset.id
+              class="preset-actions absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
+              :class="editId === preset.id || isCoarse
                 ? 'opacity-100'
                 : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'"
             >
@@ -263,7 +278,6 @@
                 class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
                 :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
                 aria-label="Edit preset"
-                :title="editId === preset.id ? 'Editing' : 'Edit name & colors'"
                 @click.stop="startEdit(preset)"
               >
                 <Icon name="mdi:pencil" size="11" />
@@ -297,7 +311,14 @@
             <Icon name="mdi:chevron-left" size="20" />
           </button>
 
-          <div class="preset-viewport flex-1 min-w-0 overflow-hidden">
+          <div
+            class="preset-viewport flex-1 min-w-0 overflow-hidden"
+            @pointerdown="mySwipe.onPointerDown"
+            @pointermove="mySwipe.onPointerMove"
+            @pointerup="mySwipe.onPointerUp"
+            @pointercancel="mySwipe.onPointerCancel"
+            @click.capture="mySwipe.onClickCapture"
+          >
             <div
               class="preset-track flex"
               :class="{ 'preset-track--animate': myAnimate }"
@@ -340,8 +361,8 @@
                   </button>
 
                   <div
-                    class="absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
-                    :class="editId === preset.id
+                    class="preset-actions absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
+                    :class="editId === preset.id || isCoarse
                       ? 'opacity-100'
                       : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'"
                   >
@@ -350,7 +371,6 @@
                       class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
                       :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
                       aria-label="Edit preset"
-                      :title="editId === preset.id ? 'Editing' : 'Edit name & colors'"
                       @click.stop="startEdit(preset)"
                     >
                       <Icon name="mdi:pencil" size="11" />
@@ -423,19 +443,22 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-1">
-        <button
-          type="button"
-          class="preset-io-btn"
-          :disabled="!presetsStore.hasUserPresets"
-          :title="presetsStore.hasUserPresets ? 'Export my presets' : 'Save a preset first to export'"
-          @click="exportPresets"
+        <CbHint
+          :text="presetsStore.hasUserPresets ? 'Export my presets' : 'Save a preset first to export'"
+          :blocked="!presetsStore.hasUserPresets"
         >
-          Export
-        </button>
+          <button
+            type="button"
+            class="preset-io-btn"
+            :disabled="!presetsStore.hasUserPresets"
+            @click="exportPresets"
+          >
+            Export
+          </button>
+        </CbHint>
         <button
           type="button"
           class="preset-io-btn"
-          title="Import presets"
           @click="importInputRef?.click()"
         >
           Import
@@ -482,6 +505,7 @@ import {
 
 const themeStore = useThemeStore()
 const presetsStore = usePresetsStore()
+const { isCoarse } = useCoarsePointer()
 
 const presetPage = ref(0)
 const animateSlide = ref(false)
@@ -624,6 +648,84 @@ function onMySlideEnd(event: TransitionEvent) {
   if (event.propertyName !== 'transform') return
   mySliding.value = false
 }
+
+/** Touch/pen swipe for carousel pages (mobile/tablet friendly) */
+function createCarouselSwipe(opts: {
+  goNext: () => void
+  goPrev: () => void
+  isBusy: () => boolean
+}) {
+  const SWIPE_THRESHOLD_PX = 42
+  const AXIS_LOCK_PX = 8
+
+  let tracking = false
+  let startX = 0
+  let startY = 0
+  let axis: 'h' | 'v' | null = null
+  let didSwipe = false
+
+  function onPointerDown(e: PointerEvent) {
+    if (opts.isBusy()) return
+    // Mouse still uses arrows; swipe is for touch/pen
+    if (e.pointerType === 'mouse') return
+    tracking = true
+    axis = null
+    didSwipe = false
+    startX = e.clientX
+    startY = e.clientY
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (!tracking) return
+    const dx = e.clientX - startX
+    const dy = e.clientY - startY
+    if (!axis) {
+      if (Math.abs(dx) < AXIS_LOCK_PX && Math.abs(dy) < AXIS_LOCK_PX) return
+      axis = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v'
+    }
+  }
+
+  function finish(e: PointerEvent) {
+    if (!tracking) return
+    tracking = false
+    const dx = e.clientX - startX
+    if (axis === 'h' && Math.abs(dx) >= SWIPE_THRESHOLD_PX) {
+      didSwipe = true
+      if (dx < 0) opts.goNext()
+      else opts.goPrev()
+    }
+    axis = null
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    finish(e)
+  }
+
+  function onPointerCancel(e: PointerEvent) {
+    finish(e)
+  }
+
+  function onClickCapture(e: MouseEvent) {
+    if (!didSwipe) return
+    e.preventDefault()
+    e.stopPropagation()
+    didSwipe = false
+  }
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onClickCapture }
+}
+
+const builtinSwipe = createCarouselSwipe({
+  goNext: () => goPresetPage(presetPage.value + 1),
+  goPrev: () => goPresetPage(presetPage.value - 1),
+  isBusy: () => isSliding.value || presetPageCount.value <= 1,
+})
+
+const mySwipe = createCarouselSwipe({
+  goNext: () => goMyPage(myPage.value + 1),
+  goPrev: () => goMyPage(myPage.value - 1),
+  isBusy: () => mySliding.value || myPageCount.value <= 1,
+})
 
 function clampMyPage() {
   const max = myPageCount.value - 1
@@ -853,6 +955,9 @@ async function onImportFile(event: Event) {
 <style scoped>
 .preset-viewport {
   touch-action: pan-y;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .preset-track {

@@ -67,6 +67,44 @@ export function useGeolocation() {
   }
 
   /**
+   * Re-read GPS/network location. Use `force: true` after travel so weather
+   * does not keep the previous city's coordinates from memory / browser cache.
+   */
+  async function refreshUserLocation(options?: { force?: boolean }): Promise<GeolocationResult> {
+    const force = options?.force === true
+    if (force) {
+      cachedCoords.value = null
+    }
+    else if (cachedCoords.value) {
+      return { ok: true, ...cachedCoords.value }
+    }
+
+    const result = await readPosition({
+      enableHighAccuracy: false,
+      timeout: force ? 25000 : 20000,
+      // Force bypasses the browser's cached fix so a new city can appear
+      maximumAge: force ? 0 : 300_000,
+    })
+
+    if (!result.ok && result.reason === 'unavailable' && force) {
+      const retry = await readPosition({
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 60_000,
+      })
+      if (retry.ok) {
+        cachedCoords.value = { lat: retry.lat, lon: retry.lon }
+        return retry
+      }
+    }
+
+    if (result.ok) {
+      cachedCoords.value = { lat: result.lat, lon: result.lon }
+    }
+    return result
+  }
+
+  /**
    * Call from a user click when enabling weather / prayer.
    * Triggers the browser native location prompt when permission is undecided.
    *
@@ -116,6 +154,7 @@ export function useGeolocation() {
   return {
     coords,
     requestUserLocation,
+    refreshUserLocation,
     ensureLocationAccess,
   }
 }
