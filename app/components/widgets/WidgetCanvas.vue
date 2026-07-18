@@ -40,30 +40,26 @@
       :data-widget-id="widget.id"
       @pointerdown="onPointerDown($event, widget.id)"
     >
-      <div class="widget-board-actions">
-        <CbHint :text="`Edit ${widget.name} size`">
-          <button
-            type="button"
-            class="widget-board-chrome-btn"
-            :aria-label="`Edit ${widget.name} size`"
-            :aria-expanded="editingId === widget.id"
-            @pointerdown.stop
-            @click.stop="toggleEdit(widget.id)"
-          >
-            <Icon name="mdi:pencil" size="13" />
-          </button>
-        </CbHint>
-        <CbHint :text="`Close ${widget.name}`">
-          <button
-            type="button"
-            class="widget-board-chrome-btn"
-            :aria-label="`Close ${widget.name}`"
-            @pointerdown.stop
-            @click.stop="closeWidget(widget.id)"
-          >
-            <Icon name="mdi:close" size="14" />
-          </button>
-        </CbHint>
+      <div class="widget-board-actions" data-widget-chrome>
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :aria-label="`Edit ${widget.name} size`"
+          :aria-expanded="editingId === widget.id"
+          @pointerdown.stop
+          @click.stop="toggleEdit(widget.id)"
+        >
+          <Icon name="mdi:pencil" size="13" />
+        </button>
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :aria-label="`Close ${widget.name}`"
+          @pointerdown.stop
+          @click.stop="closeWidget(widget.id)"
+        >
+          <Icon name="mdi:close" size="14" />
+        </button>
       </div>
 
       <WidgetSizePopover
@@ -292,6 +288,8 @@ function closeEditOnOutside(event: PointerEvent) {
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
+  // Hidden edit/close chrome must never swallow the tap that reveals it
+  if (target.closest('[data-widget-chrome]')) return false
   return Boolean(
     target.closest(
       'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover], [data-widget-swipe]',
@@ -804,7 +802,9 @@ function onPressUp() {
   const id = pressId
   clearPress()
   if (!id || draggingId.value) return
-  if (isCoarse.value) revealChrome(id)
+  // Always pin chrome on a short tap — tablets sometimes report pointer:fine
+  // so isCoarse alone is not reliable for revealing edit/close.
+  revealChrome(id)
 }
 
 function onPressCancel() {
@@ -960,6 +960,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Invisible chrome must not intercept the tap that reveals it */
+  pointer-events: none;
+}
+
+.widget-board-item:hover .widget-board-actions,
+.widget-board-item:focus-within .widget-board-actions,
+.widget-board-item--chrome .widget-board-actions,
+.widget-board-item--editing .widget-board-actions {
+  pointer-events: auto;
 }
 
 .widget-board-chrome-btn {
@@ -1018,10 +1027,19 @@ onUnmounted(() => {
 
 /* Phones / tablets: no hover — chrome only after an explicit tap */
 @media (hover: none), (pointer: coarse) {
+  .widget-board-item:hover .widget-board-actions {
+    pointer-events: none;
+  }
+
   .widget-board-item:hover .widget-board-chrome-btn {
     opacity: 0;
     pointer-events: none;
     transform: scale(0.92);
+  }
+
+  .widget-board-item--chrome .widget-board-actions,
+  .widget-board-item--editing .widget-board-actions {
+    pointer-events: auto;
   }
 
   .widget-board-item--chrome .widget-board-chrome-btn,
