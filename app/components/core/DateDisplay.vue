@@ -8,7 +8,7 @@
     <p
       class="font-ui px-1"
       :style="{
-        fontSize: 'clamp(0.7rem, calc(var(--font-size-clock) * 0.18), 1.15rem)',
+        fontSize: 'max(0.7rem, calc(var(--font-size-clock) * 0.18))',
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
       }"

@@ -17,13 +17,19 @@
   --color-surface-rgb: 26, 26, 26;
   --color-muted-rgb: 156, 163, 175;
 
-  /* Font defaults — pref is user setting; --font-size-clock is fluid cap */
+  /* Font defaults — pref is the user slider; viewport only shrinks on small screens */
   --font-clock: system-ui, sans-serif;
   --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   /* Brand wordmark only (splash / panel titles) — not the clock face */
   --font-brand: 'Space Grotesk', system-ui, sans-serif;
   --font-size-clock-pref: 6rem;
-  --font-size-clock: clamp(2.35rem, 10.5vw + 0.35rem, var(--font-size-clock-pref));
+  /*
+   * Slider sets --font-size-clock-pref (2–11.5rem).
+   * Viewport only shrinks when the clock would overflow — so raising the
+   * slider keeps increasing size until that screen’s real ceiling.
+   * 26vw ≈ full 11.5rem from ~700px wide (tablets/desktops).
+   */
+  --font-size-clock: max(2.35rem, min(var(--font-size-clock-pref), 26vw));
   --font-weight-clock: 700;
   --letter-spacing-clock: 0.05em;
 
@@ -51,13 +57,14 @@
     --fab-edge: 1rem;
     --board-pad-bottom: 6.25rem;
     --panel-pad: 1rem;
-    --font-size-clock: clamp(2.1rem, 12vw + 0.2rem, var(--font-size-clock-pref));
+    /* Phones: still follow the slider; 26vw is as large as one-line time allows */
+    --font-size-clock: max(2.1rem, min(var(--font-size-clock-pref), 26vw));
   }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
   :root {
-    --font-size-clock: clamp(1.75rem, 8vh + 1rem, var(--font-size-clock-pref));
+    --font-size-clock: max(1.75rem, min(var(--font-size-clock-pref), 28vh));
     --board-pad-bottom: 5.5rem;
   }
 }

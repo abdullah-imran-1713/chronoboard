@@ -8,7 +8,7 @@
     <p
       class="font-ui px-1"
       :style="{
-        fontSize: 'clamp(0.65rem, calc(var(--font-size-clock) * 0.14), 0.95rem)',
+        fontSize: 'max(0.65rem, calc(var(--font-size-clock) * 0.14))',
         letterSpacing: '0.05em',
       }"
       :dir="locale === 'ar' ? 'rtl' : 'ltr'"
