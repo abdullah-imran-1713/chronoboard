@@ -38,37 +38,10 @@
       }"
       :style="itemStyle(widget.id)"
       :data-widget-id="widget.id"
+      :data-chrome="chromeId === widget.id || editingId === widget.id ? 'true' : 'false'"
+      @pointerdown.capture="onChromeWake($event, widget.id)"
       @pointerdown="onPointerDown($event, widget.id)"
     >
-      <div class="widget-board-actions" data-widget-chrome>
-        <button
-          type="button"
-          class="widget-board-chrome-btn"
-          :aria-label="`Edit ${widget.name} size`"
-          :aria-expanded="editingId === widget.id"
-          @pointerdown.stop
-          @click.stop="toggleEdit(widget.id)"
-        >
-          <Icon name="mdi:pencil" size="13" />
-        </button>
-        <button
-          type="button"
-          class="widget-board-chrome-btn"
-          :aria-label="`Close ${widget.name}`"
-          @pointerdown.stop
-          @click.stop="closeWidget(widget.id)"
-        >
-          <Icon name="mdi:close" size="14" />
-        </button>
-      </div>
-
-      <WidgetSizePopover
-        v-if="editingId === widget.id"
-        :model-value="widgetScale(widget.id)"
-        @update:model-value="onScalePreview(widget.id, $event)"
-        @commit="onScaleCommit(widget.id, $event)"
-      />
-
       <div
         class="widget-board-body"
         :style="{
@@ -82,6 +55,41 @@
           class="widget-board-card"
         />
       </div>
+
+      <div
+        class="widget-board-actions"
+        data-widget-chrome
+        :aria-hidden="chromeId === widget.id || editingId === widget.id ? 'false' : 'true'"
+      >
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :tabindex="chromeId === widget.id || editingId === widget.id ? 0 : -1"
+          :aria-label="`Edit ${widget.name} size`"
+          :aria-expanded="editingId === widget.id"
+          @pointerdown.stop
+          @click.stop="toggleEdit(widget.id)"
+        >
+          <Icon name="mdi:pencil" size="15" />
+        </button>
+        <button
+          type="button"
+          class="widget-board-chrome-btn"
+          :tabindex="chromeId === widget.id || editingId === widget.id ? 0 : -1"
+          :aria-label="`Close ${widget.name}`"
+          @pointerdown.stop
+          @click.stop="closeWidget(widget.id)"
+        >
+          <Icon name="mdi:close" size="16" />
+        </button>
+      </div>
+
+      <WidgetSizePopover
+        v-if="editingId === widget.id"
+        :model-value="widgetScale(widget.id)"
+        @update:model-value="onScalePreview(widget.id, $event)"
+        @commit="onScaleCommit(widget.id, $event)"
+      />
     </div>
 
     <div
@@ -109,8 +117,11 @@ import {
 
 const LONG_PRESS_MS_FINE = 280
 const LONG_PRESS_MS_COARSE = 420
-const CHROME_VISIBLE_MS = 2800
+/** Same hide cadence as board FAB rail (`useCursorAutoHide(3000)`). */
+const CHROME_VISIBLE_MS = 3000
 const MOVE_THRESHOLD_PX = 7
+/** Touch finger wobble — don't treat as drag */
+const COARSE_TAP_SLOP_PX = 18
 const COLLISION_PAD = 6
 const HERO_PAD = 12
 
@@ -125,6 +136,9 @@ const widgetStore = useWidgetStore()
 const layoutStore = useLayoutStore()
 const { isCoarse } = useCoarsePointer()
 
+function isTouchLikePointer(event: PointerEvent) {
+  return isCoarse.value || event.pointerType === 'touch'
+}
 const emit = defineEmits<{
   'board-height': [height: number]
 }>()
@@ -152,7 +166,8 @@ const supportSlotStyle = computed(() => {
   if (footerPinBottom.value) {
     return {
       top: 'auto',
-      bottom: `${SUPPORT_FOOTER_VIEWPORT_INSET_PX}px`,
+      // CSS var clears the FAB rail on phones; desktop/tablet keep 36px.
+      bottom: 'var(--support-footer-inset)',
     }
   }
   const top = Number.isFinite(footerTopPx.value) ? Math.max(0, footerTopPx.value) : 0
@@ -161,6 +176,25 @@ const supportSlotStyle = computed(() => {
     bottom: 'auto',
   }
 })
+
+/** Resolved pinned footer inset (px) — matches `--support-footer-inset`. */
+function supportFooterInsetPx() {
+  if (!import.meta.client) return SUPPORT_FOOTER_VIEWPORT_INSET_PX
+  const probe = document.createElement('div')
+  probe.style.cssText = [
+    'position:fixed',
+    'left:0',
+    'bottom:0',
+    'width:0',
+    'height:var(--support-footer-inset)',
+    'visibility:hidden',
+    'pointer-events:none',
+  ].join(';')
+  document.body.appendChild(probe)
+  const px = probe.getBoundingClientRect().height
+  probe.remove()
+  return px > 0 ? px : SUPPORT_FOOTER_VIEWPORT_INSET_PX
+}
 
 function resolveInitialBoardHeight() {
   if (!import.meta.client) return 800
@@ -175,6 +209,8 @@ let pressTimer: ReturnType<typeof setTimeout> | null = null
 let pressId: string | null = null
 let pressStart = { x: 0, y: 0 }
 let pressItem: HTMLElement | null = null
+/** True when finger moved past tap slop (swipe) — cancel pending long-press drag */
+let pressExceededTapSlop = false
 let chromeTimer: ReturnType<typeof setTimeout> | null = null
 
 const widgetModules = import.meta.glob('./*Widget.vue')
@@ -290,9 +326,11 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
   // Hidden edit/close chrome must never swallow the tap that reveals it
   if (target.closest('[data-widget-chrome]')) return false
+  // Note: do NOT treat [data-widget-swipe] as interactive — weather swipe
+  // must still allow a short tap to reveal edit/close chrome.
   return Boolean(
     target.closest(
-      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover], [data-widget-swipe]',
+      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover]',
     ),
   )
 }
@@ -385,9 +423,10 @@ function syncBoardExtent() {
 
   let nextHeight: number
   if (showSupport) {
+    const inset = supportFooterInsetPx()
     const pinnedTop = Math.max(
       0,
-      viewportH - SUPPORT_FOOTER_VIEWPORT_INSET_PX - SUPPORT_FOOTER_HEIGHT_PX,
+      viewportH - inset - SUPPORT_FOOTER_HEIGHT_PX,
     )
     const belowContent = contentBottom > 0
       ? contentBottom + SUPPORT_FOOTER_GAP_PX
@@ -727,6 +766,7 @@ function clearPress() {
   }
   pressId = null
   pressItem = null
+  pressExceededTapSlop = false
   window.removeEventListener('pointermove', onPressMove)
   window.removeEventListener('pointerup', onPressUp)
   window.removeEventListener('pointercancel', onPressCancel)
@@ -770,9 +810,11 @@ function onPointerDown(event: PointerEvent, id: string) {
   const item = event.currentTarget as HTMLElement
   pressId = id
   pressItem = item
+  pressExceededTapSlop = false
   pressStart = { x: event.clientX, y: event.clientY }
 
-  const holdMs = isCoarse.value ? LONG_PRESS_MS_COARSE : LONG_PRESS_MS_FINE
+  const touchLike = isTouchLikePointer(event)
+  const holdMs = touchLike ? LONG_PRESS_MS_COARSE : LONG_PRESS_MS_FINE
   pressTimer = setTimeout(() => {
     if (pressId === id && pressItem) {
       beginDrag(id, pressItem, pressStart.x, pressStart.y)
@@ -787,9 +829,21 @@ function onPointerDown(event: PointerEvent, id: string) {
 
 function onPressMove(event: PointerEvent) {
   if (!pressId || !pressItem) return
-  const dx = event.clientX - pressStart.x
-  const dy = event.clientY - pressStart.y
-  if (Math.hypot(dx, dy) < MOVE_THRESHOLD_PX) return
+  const dist = Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y)
+
+  // Touch: finger wobble must not start a drag. Drag only via long-press.
+  if (isTouchLikePointer(event)) {
+    if (dist >= COARSE_TAP_SLOP_PX) {
+      pressExceededTapSlop = true
+      if (pressTimer) {
+        clearTimeout(pressTimer)
+        pressTimer = null
+      }
+    }
+    return
+  }
+
+  if (dist < MOVE_THRESHOLD_PX) return
 
   const id = pressId
   const item = pressItem
@@ -799,16 +853,27 @@ function onPressMove(event: PointerEvent) {
 }
 
 function onPressUp() {
-  const id = pressId
   clearPress()
-  if (!id || draggingId.value) return
-  // Always pin chrome on a short tap — tablets sometimes report pointer:fine
-  // so isCoarse alone is not reliable for revealing edit/close.
-  revealChrome(id)
 }
 
 function onPressCancel() {
   clearPress()
+}
+
+/**
+ * Board-FAB pattern: any press on the widget wakes edit/close chrome
+ * (same idea as tapping the board to show the FAB rail).
+ * Capture phase so weather swipe / child handlers cannot swallow it.
+ */
+function onChromeWake(event: PointerEvent, id: string) {
+  if (event.button !== 0) return
+  if (draggingId.value) return
+  const target = event.target
+  if (target instanceof Element) {
+    // Don't fight the chrome / size controls themselves
+    if (target.closest('[data-widget-chrome], [data-widget-size-popover]')) return
+  }
+  revealChrome(id)
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -913,7 +978,8 @@ onUnmounted(() => {
 
 .widget-board-item {
   position: absolute;
-  touch-action: pan-y;
+  /* Prefer taps over vertical pan steal — pan-y was canceling pointerup on mobile */
+  touch-action: manipulation;
   z-index: 1;
   width: max-content;
   max-width: calc(100% - 1.25rem);
@@ -954,57 +1020,54 @@ onUnmounted(() => {
 
 .widget-board-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 5;
+  top: 6px;
+  right: 6px;
+  z-index: 12;
   display: flex;
   align-items: center;
-  gap: 4px;
-  /* Invisible chrome must not intercept the tap that reveals it */
+  gap: 6px;
+  /* FAB-rail pattern: whole group fades in/out (not per-button opacity fights) */
+  opacity: 0;
   pointer-events: none;
+  transition: opacity 0.35s ease;
 }
 
 .widget-board-item:hover .widget-board-actions,
 .widget-board-item:focus-within .widget-board-actions,
-.widget-board-item--chrome .widget-board-actions,
-.widget-board-item--editing .widget-board-actions {
+.widget-board-item[data-chrome='true'] .widget-board-actions {
+  opacity: 1;
   pointer-events: auto;
 }
 
 .widget-board-chrome-btn {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
-  border: none;
+  border: 1px solid rgba(var(--color-muted-rgb), 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--color-muted);
-  background: rgba(var(--color-bg-rgb), 0.75);
-  opacity: 0;
-  pointer-events: none;
+  color: var(--color-text);
+  background: rgba(var(--color-surface-rgb), 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: none;
+  padding: 0;
   transition:
-    opacity 0.2s ease,
-    color 0.15s ease,
-    background 0.15s ease,
-    transform 0.2s ease;
-  transform: scale(0.92);
-}
-
-.widget-board-item:hover .widget-board-chrome-btn,
-.widget-board-item:focus-within .widget-board-chrome-btn,
-.widget-board-item--chrome .widget-board-chrome-btn,
-.widget-board-item--editing .widget-board-chrome-btn,
-.widget-board-chrome-btn:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .widget-board-chrome-btn:hover {
-  color: var(--color-text);
-  background: rgba(var(--color-surface-rgb), 0.95);
+  border-color: rgba(var(--color-muted-rgb), 0.35);
+  transform: scale(1.04);
+}
+
+.widget-board-chrome-btn:focus-visible {
+  outline: 2px solid rgba(var(--color-primary-rgb), 0.55);
+  outline-offset: 2px;
 }
 
 .widget-board-body {
@@ -1025,30 +1088,17 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
-/* Phones / tablets: no hover — chrome only after an explicit tap */
+/* Phones / tablets: no sticky :hover — chrome only via data-chrome / focus-within */
 @media (hover: none), (pointer: coarse) {
   .widget-board-item:hover .widget-board-actions {
-    pointer-events: none;
-  }
-
-  .widget-board-item:hover .widget-board-chrome-btn {
     opacity: 0;
     pointer-events: none;
-    transform: scale(0.92);
   }
 
-  .widget-board-item--chrome .widget-board-actions,
-  .widget-board-item--editing .widget-board-actions {
-    pointer-events: auto;
-  }
-
-  .widget-board-item--chrome .widget-board-chrome-btn,
-  .widget-board-item--editing .widget-board-chrome-btn,
-  .widget-board-item:focus-within .widget-board-chrome-btn,
-  .widget-board-chrome-btn:focus-visible {
+  .widget-board-item[data-chrome='true'] .widget-board-actions,
+  .widget-board-item:focus-within .widget-board-actions {
     opacity: 1;
     pointer-events: auto;
-    transform: scale(1);
   }
 }
 

@@ -115,6 +115,14 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'en',
       },
+      // Gate board paint before Vue mounts — prevents clock flash on first visit
+      script: [
+        {
+          key: 'cb-brand-splash-gate',
+          innerHTML:
+            "try{if(localStorage.getItem('chronoboard_brand_splash_seen')!=='1')document.documentElement.classList.add('brand-splash-pending')}catch(e){document.documentElement.classList.add('brand-splash-pending')}",
+        },
+      ],
     },
   },
 

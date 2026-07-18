@@ -94,7 +94,7 @@ export const WIDGET_BOARD_MAX_COLS = 4
 export const SUPPORT_FOOTER_HEIGHT_PX = 28
 export const SUPPORT_FOOTER_GAP_PX = 14
 export const SUPPORT_FOOTER_END_PAD_PX = 8
-/** Distance from viewport bottom to the footer’s bottom edge when no widgets push it down */
+/** Distance from viewport bottom to the footer’s bottom edge when no widgets push it down (desktop/tablet). Mobile overrides via CSS `--support-footer-inset`. */
 export const SUPPORT_FOOTER_VIEWPORT_INSET_PX = 36
 /** FAB clearance when support footer is hidden */
 export const BOARD_FAB_CLEARANCE_PX = 120

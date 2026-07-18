@@ -277,6 +277,19 @@ useKeyboardShortcuts({
   transform: translateX(calc(-1 * min(20rem, 90vw) - 0.75rem));
 }
 
+/* Phones only: full-bleed drawer — slide FABs off-screen (no left-edge peek) */
+@media (max-width: 640px) {
+  .board-fab-rail--panel-open {
+    transform: translate3d(
+      calc(100% + var(--fab-edge) + var(--safe-right) + 0.75rem),
+      0,
+      0
+    );
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 .board-fab {
   width: var(--fab-size);
   height: var(--fab-size);

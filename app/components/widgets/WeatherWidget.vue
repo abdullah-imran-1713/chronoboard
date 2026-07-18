@@ -125,7 +125,7 @@
             type="button"
             class="weather-day-nav"
             aria-label="Show today’s weather"
-            @click.stop="goToday"
+            @click.stop="goToday($event)"
           >
             <Icon name="mdi:chevron-left" size="16" />
           </button>
@@ -139,7 +139,7 @@
             type="button"
             class="weather-day-nav"
             aria-label="Show tomorrow’s weather"
-            @click.stop="goTomorrow"
+            @click.stop="goTomorrow($event)"
           >
             <Icon name="mdi:chevron-right" size="16" />
           </button>
@@ -263,6 +263,11 @@ function clearPagerHide() {
   pagerHideTimer = null
 }
 
+/** Tablets often report pointer:fine — treat real touch like coarse. */
+function isTouchLike(event?: { pointerType?: string }) {
+  return isCoarse.value || event?.pointerType === 'touch'
+}
+
 function revealPager(temporary: boolean) {
   pagerRevealed.value = true
   clearPagerHide()
@@ -284,18 +289,18 @@ function onPaneLeave() {
   pagerRevealed.value = false
 }
 
-function goTomorrow() {
+function goTomorrow(event?: { pointerType?: string }) {
   if (!canGoTomorrow.value) return
   slideDir.value = 'left'
   dayIndex.value = 1
-  if (isCoarse.value) revealPager(true)
+  if (isTouchLike(event)) revealPager(true)
 }
 
-function goToday() {
+function goToday(event?: { pointerType?: string }) {
   if (!canGoToday.value) return
   slideDir.value = 'right'
   dayIndex.value = 0
-  if (isCoarse.value) revealPager(true)
+  if (isTouchLike(event)) revealPager(true)
 }
 
 function onPanePointerDown(event: PointerEvent) {
@@ -305,7 +310,7 @@ function onPanePointerDown(event: PointerEvent) {
   const target = event.target
   if (target instanceof Element && target.closest('button, a')) {
     // Nav / refresh taps keep pager visible on touch
-    if (isCoarse.value) revealPager(true)
+    if (isTouchLike(event)) revealPager(true)
     return
   }
 
@@ -320,7 +325,7 @@ function onSwipePointerMove(event: PointerEvent) {
   if (!swipeActive) return
   const dx = event.clientX - swipeStartX
   const dy = event.clientY - swipeStartY
-  if (Math.hypot(dx, dy) >= 10) {
+  if (Math.hypot(dx, dy) >= 18) {
     tapCandidate = false
     if (!swipeLocked) {
       swipeLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
@@ -332,21 +337,21 @@ function onSwipePointerUp(event: PointerEvent) {
   if (!swipeActive) return
   const dx = event.clientX - swipeStartX
   const wasHorizontal = swipeLocked === 'h'
-  const wasTap = tapCandidate && Math.hypot(dx, event.clientY - swipeStartY) < 10
+  const wasTap = tapCandidate && Math.hypot(dx, event.clientY - swipeStartY) < 18
   swipeActive = false
   swipeLocked = null
   tapCandidate = false
 
-  if (wasTap && isCoarse.value) {
+  if (wasTap && isTouchLike(event)) {
     revealPager(true)
     return
   }
 
   if (!wasHorizontal || Math.abs(dx) < SWIPE_THRESHOLD_PX) return
 
-  if (isCoarse.value) revealPager(true)
-  if (dx < 0) goTomorrow()
-  else goToday()
+  if (isTouchLike(event)) revealPager(true)
+  if (dx < 0) goTomorrow(event)
+  else goToday(event)
 }
 
 watch(
@@ -396,7 +401,8 @@ async function onRefresh() {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  touch-action: pan-y;
+  /* Match board items — pan-y was canceling short taps before reveal */
+  touch-action: manipulation;
 }
 
 .weather-main {

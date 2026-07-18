@@ -522,6 +522,7 @@
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-preset-title"
+            aria-describedby="delete-preset-desc"
             class="relative w-full max-w-sm rounded-xl p-6 font-ui shadow-2xl"
             :style="{
               backgroundColor: 'var(--color-surface)',
@@ -532,30 +533,41 @@
           >
             <div class="flex flex-col gap-4">
               <div class="flex flex-col gap-2">
-                <h2 id="delete-preset-title" class="text-lg font-bold tracking-tight m-0">
+                <p
+                  class="text-[11px] font-bold uppercase tracking-[0.12em] m-0"
+                  :style="{ color: 'var(--color-muted)' }"
+                >
+                  My presets
+                </p>
+                <h2
+                  id="delete-preset-title"
+                  class="text-lg font-bold tracking-tight m-0"
+                >
                   Delete preset?
                 </h2>
                 <p
+                  id="delete-preset-desc"
                   class="text-sm leading-relaxed m-0"
                   :style="{ color: 'var(--color-secondary)' }"
                 >
                   Remove “{{ pendingDelete.name }}”? This can’t be undone.
                 </p>
               </div>
-              <div class="flex items-center justify-end gap-2.5 pt-1">
+
+              <div class="flex flex-col gap-2.5 pt-1">
                 <button
                   type="button"
-                  class="preset-mini-btn preset-mini-btn--ghost"
-                  @click="cancelDeletePreset"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  class="cb-btn-primary"
+                  class="cb-btn-primary w-full"
                   @click="confirmDeletePreset"
                 >
                   Delete
+                </button>
+                <button
+                  type="button"
+                  class="cb-btn-muted w-full"
+                  @click="cancelDeletePreset"
+                >
+                  Cancel
                 </button>
               </div>
             </div>

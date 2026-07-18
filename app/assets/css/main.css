@@ -48,6 +48,8 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  /* Support footer distance from viewport bottom when pinned */
+  --support-footer-inset: 36px;
 
   /* Effects */
   --glow-color: transparent;
@@ -63,6 +65,13 @@
     --fab-edge: 1rem;
     --board-pad-bottom: 6.25rem;
     --panel-pad: 1rem;
+    /*
+     * Phones: FAB rail sits bottom-right and spans most of the width.
+     * Pin the support footer above that row so it never sits behind the buttons.
+     */
+    --support-footer-inset: calc(
+      var(--fab-edge) + var(--fab-size) + 0.65rem + var(--safe-bottom)
+    );
     /* Phones: tighter budget so HH:MM:SS + period stays on one line */
     --font-size-clock: max(
       2.1rem,
@@ -123,6 +132,27 @@
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/*
+ * First-visit splash gate: hide board until BrandSplash unlocks.
+ * Class is set by an early head script (see nuxt.config) before paint.
+ */
+html.brand-splash-pending .board-hero,
+html.brand-splash-pending .widget-canvas,
+html.brand-splash-pending .board-fab-rail {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Opaque veil so nothing peeks under the splash before Vue mounts */
+html.brand-splash-pending body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--color-bg, #0a0a0a);
+  pointer-events: none;
 }
 
 /* Hide scrollbar but keep scroll */

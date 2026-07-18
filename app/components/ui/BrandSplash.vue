@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="brand-splash">
+    <Transition name="brand-splash" @after-leave="onAfterLeave">
       <div
         v-if="visible"
         class="brand-splash"
@@ -26,16 +26,24 @@
 /**
  * First-visit brand moment — calm presence only:
  * soft scale + fade (mark), then wordmark. No bounce / spin / glow.
+ *
+ * Board stays gated (html.brand-splash-pending) until this finishes,
+ * so the clock never flashes before the logo.
  */
-const STORAGE_KEY = 'chronoboard_brand_splash_seen'
 const HOLD_MS = 1200
 const FADE_MS = 520
+/** Hard unlock if something stalls — never leave the board hidden forever */
+const SAFETY_UNLOCK_MS = 4500
+
+const { unlockBoard, hasSeenSplash, markSplashSeen } = useBrandSplashGate()
 
 const visible = ref(false)
 const phase = ref<'enter' | 'hold' | 'exit'>('enter')
 
 let holdTimer: ReturnType<typeof setTimeout> | null = null
 let exitTimer: ReturnType<typeof setTimeout> | null = null
+let safetyTimer: ReturnType<typeof setTimeout> | null = null
+let unlocked = false
 
 function clearTimers() {
   if (holdTimer) {
@@ -46,25 +54,32 @@ function clearTimers() {
     clearTimeout(exitTimer)
     exitTimer = null
   }
+  if (safetyTimer) {
+    clearTimeout(safetyTimer)
+    safetyTimer = null
+  }
 }
 
-function persistSeen() {
-  try {
-    localStorage.setItem(STORAGE_KEY, '1')
-  }
-  catch {
-    // ignore quota / private mode
-  }
+function releaseGate() {
+  if (unlocked) return
+  unlocked = true
+  unlockBoard()
+}
+
+function onAfterLeave() {
+  releaseGate()
 }
 
 function finish() {
   if (!visible.value || phase.value === 'exit') return
   clearTimers()
   phase.value = 'exit'
-  persistSeen()
+  markSplashSeen()
   exitTimer = setTimeout(() => {
     visible.value = false
     exitTimer = null
+    // after-leave also unlocks; call here too in case transition is skipped
+    releaseGate()
   }, FADE_MS)
 }
 
@@ -74,15 +89,29 @@ function prefersReducedMotion(): boolean {
 }
 
 onMounted(() => {
-  try {
-    if (localStorage.getItem(STORAGE_KEY) === '1') return
-  }
-  catch {
-    // show once anyway
+  if (hasSeenSplash()) {
+    releaseGate()
+    return
   }
 
   visible.value = true
   phase.value = 'enter'
+
+  safetyTimer = setTimeout(() => {
+    safetyTimer = null
+    if (unlocked) return
+    if (holdTimer) {
+      clearTimeout(holdTimer)
+      holdTimer = null
+    }
+    if (exitTimer) {
+      clearTimeout(exitTimer)
+      exitTimer = null
+    }
+    markSplashSeen()
+    visible.value = false
+    releaseGate()
+  }, SAFETY_UNLOCK_MS)
 
   if (prefersReducedMotion()) {
     holdTimer = setTimeout(finish, 650)
@@ -97,6 +126,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearTimers()
+  releaseGate()
 })
 </script>
 
