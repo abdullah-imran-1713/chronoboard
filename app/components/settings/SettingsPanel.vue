@@ -24,19 +24,26 @@
           color: 'var(--color-text)',
         }"
       >
-        <div class="settings-panel-header sticky top-0 z-[2] flex items-center justify-between px-6 py-5">
-          <h2 id="settings-title" class="text-lg font-bold tracking-tight">
-            Settings
-          </h2>
-          <button
-            type="button"
-            class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer"
-            :style="{ color: 'var(--color-text)' }"
-            aria-label="Close settings"
-            @click="emitClose"
-          >
-            <Icon name="mdi:close" size="20" />
-          </button>
+        <div class="settings-panel-header sticky top-0 z-[2] flex items-center justify-between px-6 py-5 gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="settings-brand-mark flex-none" aria-hidden="true">
+              <BrandMark />
+            </div>
+            <h2 id="settings-title" class="settings-brand-title font-brand m-0 truncate">
+              Settings
+            </h2>
+          </div>
+          <CbHint text="Close">
+            <button
+              type="button"
+              class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer flex-none"
+              :style="{ color: 'var(--color-text)' }"
+              aria-label="Close settings"
+              @click="emitClose"
+            >
+              <Icon name="mdi:close" size="20" />
+            </button>
+          </CbHint>
         </div>
 
         <div class="settings-scroll flex-1 overflow-y-auto p-6 flex flex-col gap-6">
@@ -44,6 +51,7 @@
           <ThemeSettings class="settings-section" />
           <FontSettings class="settings-section" />
           <EffectSettings class="settings-section" />
+          <SupportSettings class="settings-section" />
 
           <div class="settings-section flex gap-2.5">
             <button type="button" class="cb-btn-muted" @click="resetAll">
@@ -95,6 +103,8 @@ function resetAll() {
   layoutStore.$reset()
   themeStore.applyTheme()
   customization.applyToCSS()
-  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets'))
+  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets', {
+    detail: { forceAll: true },
+  }))
 }
 </script>

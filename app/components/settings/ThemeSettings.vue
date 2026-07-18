@@ -37,16 +37,18 @@
         </p>
 
         <div class="flex items-center gap-1">
-          <button
-            type="button"
-            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-            :style="{ color: 'var(--color-muted)' }"
-            :disabled="presetPage <= 0 || isSliding"
-            aria-label="Previous presets"
-            @click="goPresetPage(presetPage - 1)"
-          >
-            <Icon name="mdi:chevron-left" size="20" />
-          </button>
+          <CbHint text="Previous presets" :blocked="presetPage <= 0 || isSliding">
+            <button
+              type="button"
+              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+              :style="{ color: 'var(--color-muted)' }"
+              :disabled="presetPage <= 0 || isSliding"
+              aria-label="Previous presets"
+              @click="goPresetPage(presetPage - 1)"
+            >
+              <Icon name="mdi:chevron-left" size="20" />
+            </button>
+          </CbHint>
 
           <div
             class="preset-viewport flex-1 min-w-0 overflow-hidden"
@@ -67,43 +69,49 @@
                 :key="pageIndex"
                 class="preset-page grid grid-cols-3 gap-2"
               >
-                <button
+                <CbHint
                   v-for="palette in page"
                   :key="palette.id"
-                  type="button"
-                  class="preset-sw"
-                  :title="palette.name"
-                  @click="themeStore.applyPalette(palette)"
+                  class="preset-sw-hint"
+                  :text="palette.name"
                 >
-                  <span
-                    class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
-                    :data-sel="isBuiltinActive(palette) ? 'true' : 'false'"
+                  <button
+                    type="button"
+                    class="preset-sw"
+                    @click="themeStore.applyPalette(palette)"
                   >
-                    <span class="flex-[1.4]" :style="{ backgroundColor: palette.colors.bg }" />
-                    <span class="flex-1" :style="{ backgroundColor: palette.colors.surface }" />
-                    <span class="w-2.5 flex-none" :style="{ backgroundColor: palette.colors.primary }" />
-                  </span>
-                  <span
-                    class="text-[10px] leading-tight text-center"
-                    :style="{ color: isBuiltinActive(palette) ? 'var(--color-text)' : 'var(--color-muted)' }"
-                  >
-                    {{ palette.name }}
-                  </span>
-                </button>
+                    <span
+                      class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
+                      :data-sel="isBuiltinActive(palette) ? 'true' : 'false'"
+                    >
+                      <span class="flex-[1.4]" :style="{ backgroundColor: palette.colors.bg }" />
+                      <span class="flex-1" :style="{ backgroundColor: palette.colors.surface }" />
+                      <span class="w-2.5 flex-none" :style="{ backgroundColor: palette.colors.primary }" />
+                    </span>
+                    <span
+                      class="text-[10px] leading-tight text-center"
+                      :style="{ color: isBuiltinActive(palette) ? 'var(--color-text)' : 'var(--color-muted)' }"
+                    >
+                      {{ palette.name }}
+                    </span>
+                  </button>
+                </CbHint>
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-            :style="{ color: 'var(--color-muted)' }"
-            :disabled="presetPage >= presetPageCount - 1 || isSliding"
-            aria-label="Next presets"
-            @click="goPresetPage(presetPage + 1)"
-          >
-            <Icon name="mdi:chevron-right" size="20" />
-          </button>
+          <CbHint text="Next presets" :blocked="presetPage >= presetPageCount - 1 || isSliding">
+            <button
+              type="button"
+              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+              :style="{ color: 'var(--color-muted)' }"
+              :disabled="presetPage >= presetPageCount - 1 || isSliding"
+              aria-label="Next presets"
+              @click="goPresetPage(presetPage + 1)"
+            >
+              <Icon name="mdi:chevron-right" size="20" />
+            </button>
+          </CbHint>
         </div>
       </div>
 
@@ -244,28 +252,29 @@
             :key="preset.id"
             class="relative group"
           >
-            <button
-              type="button"
-              class="preset-sw w-full"
-              :title="preset.name"
-              @click="themeStore.applyCustomColors(preset.colors)"
-            >
-              <span
-                class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
-                :data-sel="isUserActive(preset) || editId === preset.id ? 'true' : 'false'"
-                :data-edit="editId === preset.id ? 'true' : undefined"
+            <CbHint class="preset-sw-hint" :text="preset.name">
+              <button
+                type="button"
+                class="preset-sw w-full"
+                @click="themeStore.applyCustomColors(preset.colors)"
               >
-                <span class="flex-[1.4]" :style="{ backgroundColor: preset.colors.bg }" />
-                <span class="flex-1" :style="{ backgroundColor: preset.colors.surface }" />
-                <span class="w-2.5 flex-none" :style="{ backgroundColor: preset.colors.primary }" />
-              </span>
-              <span
-                class="text-[10px] leading-tight text-center line-clamp-1 w-full"
-                :style="{ color: isUserActive(preset) ? 'var(--color-text)' : 'var(--color-muted)' }"
-              >
-                {{ preset.name }}
-              </span>
-            </button>
+                <span
+                  class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
+                  :data-sel="isUserActive(preset) || editId === preset.id ? 'true' : 'false'"
+                  :data-edit="editId === preset.id ? 'true' : undefined"
+                >
+                  <span class="flex-[1.4]" :style="{ backgroundColor: preset.colors.bg }" />
+                  <span class="flex-1" :style="{ backgroundColor: preset.colors.surface }" />
+                  <span class="w-2.5 flex-none" :style="{ backgroundColor: preset.colors.primary }" />
+                </span>
+                <span
+                  class="text-[10px] leading-tight text-center line-clamp-1 w-full"
+                  :style="{ color: isUserActive(preset) ? 'var(--color-text)' : 'var(--color-muted)' }"
+                >
+                  {{ preset.name }}
+                </span>
+              </button>
+            </CbHint>
 
             <div
               class="preset-actions absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
@@ -273,24 +282,28 @@
                 ? 'opacity-100'
                 : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'"
             >
-              <button
-                type="button"
-                class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
-                :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
-                aria-label="Edit preset"
-                @click.stop="startEdit(preset)"
-              >
-                <Icon name="mdi:pencil" size="11" />
-              </button>
-              <button
-                type="button"
-                class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
-                :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
-                aria-label="Delete preset"
-                @click.stop="deleteUserPreset(preset.id)"
-              >
-                <Icon name="mdi:close" size="12" />
-              </button>
+              <CbHint text="Edit preset">
+                <button
+                  type="button"
+                  class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
+                  :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
+                  aria-label="Edit preset"
+                  @click.stop="startEdit(preset)"
+                >
+                  <Icon name="mdi:pencil" size="11" />
+                </button>
+              </CbHint>
+              <CbHint text="Delete preset">
+                <button
+                  type="button"
+                  class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
+                  :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
+                  aria-label="Delete preset"
+                  @click.stop="deleteUserPreset(preset.id)"
+                >
+                  <Icon name="mdi:close" size="12" />
+                </button>
+              </CbHint>
             </div>
           </div>
         </div>
@@ -300,16 +313,18 @@
           v-else
           class="flex items-center gap-1"
         >
-          <button
-            type="button"
-            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-            :style="{ color: 'var(--color-muted)' }"
-            :disabled="myPage <= 0 || mySliding"
-            aria-label="Previous my presets"
-            @click="goMyPage(myPage - 1)"
-          >
-            <Icon name="mdi:chevron-left" size="20" />
-          </button>
+          <CbHint text="Previous my presets" :blocked="myPage <= 0 || mySliding">
+            <button
+              type="button"
+              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+              :style="{ color: 'var(--color-muted)' }"
+              :disabled="myPage <= 0 || mySliding"
+              aria-label="Previous my presets"
+              @click="goMyPage(myPage - 1)"
+            >
+              <Icon name="mdi:chevron-left" size="20" />
+            </button>
+          </CbHint>
 
           <div
             class="preset-viewport flex-1 min-w-0 overflow-hidden"
@@ -337,28 +352,29 @@
                   class="relative group"
                   :class="page.length < 3 ? 'preset-slot' : undefined"
                 >
-                  <button
-                    type="button"
-                    class="preset-sw w-full"
-                    :title="preset.name"
-                    @click="themeStore.applyCustomColors(preset.colors)"
-                  >
-                    <span
-                      class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
-                      :data-sel="isUserActive(preset) || editId === preset.id ? 'true' : 'false'"
-                      :data-edit="editId === preset.id ? 'true' : undefined"
+                  <CbHint class="preset-sw-hint" :text="preset.name">
+                    <button
+                      type="button"
+                      class="preset-sw w-full"
+                      @click="themeStore.applyCustomColors(preset.colors)"
                     >
-                      <span class="flex-[1.4]" :style="{ backgroundColor: preset.colors.bg }" />
-                      <span class="flex-1" :style="{ backgroundColor: preset.colors.surface }" />
-                      <span class="w-2.5 flex-none" :style="{ backgroundColor: preset.colors.primary }" />
-                    </span>
-                    <span
-                      class="text-[10px] leading-tight text-center line-clamp-1 w-full"
-                      :style="{ color: isUserActive(preset) ? 'var(--color-text)' : 'var(--color-muted)' }"
-                    >
-                      {{ preset.name }}
-                    </span>
-                  </button>
+                      <span
+                        class="preset-sw-pill w-full h-7 rounded-full overflow-hidden flex"
+                        :data-sel="isUserActive(preset) || editId === preset.id ? 'true' : 'false'"
+                        :data-edit="editId === preset.id ? 'true' : undefined"
+                      >
+                        <span class="flex-[1.4]" :style="{ backgroundColor: preset.colors.bg }" />
+                        <span class="flex-1" :style="{ backgroundColor: preset.colors.surface }" />
+                        <span class="w-2.5 flex-none" :style="{ backgroundColor: preset.colors.primary }" />
+                      </span>
+                      <span
+                        class="text-[10px] leading-tight text-center line-clamp-1 w-full"
+                        :style="{ color: isUserActive(preset) ? 'var(--color-text)' : 'var(--color-muted)' }"
+                      >
+                        {{ preset.name }}
+                      </span>
+                    </button>
+                  </CbHint>
 
                   <div
                     class="preset-actions absolute -top-1 -right-1 flex gap-0.5 transition-opacity"
@@ -366,40 +382,46 @@
                       ? 'opacity-100'
                       : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'"
                   >
-                    <button
-                      type="button"
-                      class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
-                      :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
-                      aria-label="Edit preset"
-                      @click.stop="startEdit(preset)"
-                    >
-                      <Icon name="mdi:pencil" size="11" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
-                      :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
-                      aria-label="Delete preset"
-                      @click.stop="deleteUserPreset(preset.id)"
-                    >
-                      <Icon name="mdi:close" size="12" />
-                    </button>
+                    <CbHint text="Edit preset">
+                      <button
+                        type="button"
+                        class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
+                        :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
+                        aria-label="Edit preset"
+                        @click.stop="startEdit(preset)"
+                      >
+                        <Icon name="mdi:pencil" size="11" />
+                      </button>
+                    </CbHint>
+                    <CbHint text="Delete preset">
+                      <button
+                        type="button"
+                        class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
+                        :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
+                        aria-label="Delete preset"
+                        @click.stop="deleteUserPreset(preset.id)"
+                      >
+                        <Icon name="mdi:close" size="12" />
+                      </button>
+                    </CbHint>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-            :style="{ color: 'var(--color-muted)' }"
-            :disabled="myPage >= myPageCount - 1 || mySliding"
-            aria-label="Next my presets"
-            @click="goMyPage(myPage + 1)"
-          >
-            <Icon name="mdi:chevron-right" size="20" />
-          </button>
+          <CbHint text="Next my presets" :blocked="myPage >= myPageCount - 1 || mySliding">
+            <button
+              type="button"
+              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+              :style="{ color: 'var(--color-muted)' }"
+              :disabled="myPage >= myPageCount - 1 || mySliding"
+              aria-label="Next my presets"
+              @click="goMyPage(myPage + 1)"
+            >
+              <Icon name="mdi:chevron-right" size="20" />
+            </button>
+          </CbHint>
         </div>
 
         <div
@@ -978,6 +1000,17 @@ async function onImportFile(event: Event) {
 .preset-slot {
   flex: 0 0 calc((100% - 1rem) / 3);
   max-width: calc((100% - 1rem) / 3);
+}
+
+.preset-sw-hint {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+.preset-sw-hint :deep(.cb-hint-target) {
+  display: block;
+  width: 100%;
 }
 
 .preset-sw {

@@ -83,6 +83,13 @@ export function useWeather() {
       feelsLike: Math.round(data.feelsLike),
       sunrise: data.sunrise,
       sunset: data.sunset,
+      tomorrow: data.tomorrow
+        ? {
+            tempMax: data.tomorrow.tempMax,
+            tempMin: data.tomorrow.tempMin,
+            weatherCode: data.tomorrow.weatherCode,
+          }
+        : null,
     }
     lastFetchedAt.value = Date.now()
     scheduleDayNightRefresh(data.sunrise, data.sunset)

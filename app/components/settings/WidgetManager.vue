@@ -29,19 +29,23 @@
         </p>
 
         <div class="widget-tile-grid" role="group" :aria-label="categoryLabels[category]">
-          <button
+          <CbHint
             v-for="widget in widgets"
             :key="widget.id"
-            type="button"
-            class="widget-tile"
-            :data-on="widgetStore.isEnabled(widget.id) ? 'true' : 'false'"
-            :aria-pressed="widgetStore.isEnabled(widget.id)"
-            :title="widget.description"
-            @click="onTileClick(widget.id, widget.category)"
+            class="widget-tile-hint"
+            :text="widget.description"
           >
-            <Icon :name="widget.icon" size="22" class="widget-tile-icon" />
-            <span class="widget-tile-label">{{ shortLabel(widget.name) }}</span>
-          </button>
+            <button
+              type="button"
+              class="widget-tile"
+              :data-on="widgetStore.isEnabled(widget.id) ? 'true' : 'false'"
+              :aria-pressed="widgetStore.isEnabled(widget.id)"
+              @click="onTileClick(widget.id, widget.category)"
+            >
+              <Icon :name="widget.icon" size="22" class="widget-tile-icon" />
+              <span class="widget-tile-label">{{ shortLabel(widget.name) }}</span>
+            </button>
+          </CbHint>
         </div>
       </template>
     </div>
@@ -130,7 +134,9 @@ function showToast(message: string) {
 function resetPositions() {
   if (!canResetLayout.value) return
   layoutStore.resetWidgetPositions()
-  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets'))
+  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets', {
+    detail: { forceAll: true },
+  }))
   showToast('Layout reset')
 }
 
@@ -207,6 +213,17 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.widget-tile-hint {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+.widget-tile-hint :deep(.cb-hint-target) {
+  display: block;
+  width: 100%;
 }
 
 @media (max-width: 380px) {

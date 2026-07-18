@@ -25,18 +25,25 @@
         }"
       >
         <div class="settings-panel-header sticky top-0 z-[2] flex items-center justify-between px-6 py-5 gap-3">
-          <h2 id="widgets-panel-title" class="text-lg font-bold tracking-tight m-0">
-            Widgets
-          </h2>
-          <button
-            type="button"
-            class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer flex-none"
-            :style="{ color: 'var(--color-text)' }"
-            aria-label="Close widgets"
-            @click="emitClose"
-          >
-            <Icon name="mdi:close" size="20" />
-          </button>
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="settings-brand-mark flex-none" aria-hidden="true">
+              <BrandMark />
+            </div>
+            <h2 id="widgets-panel-title" class="settings-brand-title font-brand m-0 truncate">
+              Widgets
+            </h2>
+          </div>
+          <CbHint text="Close">
+            <button
+              type="button"
+              class="cb-icobtn w-8 h-8 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer flex-none"
+              :style="{ color: 'var(--color-text)' }"
+              aria-label="Close widgets"
+              @click="emitClose"
+            >
+              <Icon name="mdi:close" size="20" />
+            </button>
+          </CbHint>
         </div>
 
         <div class="settings-scroll flex-1 overflow-y-auto p-6 flex flex-col gap-6">

@@ -10,6 +10,9 @@ interface OpenMeteoForecast {
     cloud_cover: number
   }
   daily: {
+    weather_code: number[]
+    temperature_2m_max: number[]
+    temperature_2m_min: number[]
     sunrise: string[]
     sunset: string[]
   }
@@ -65,9 +68,9 @@ export default defineEventHandler(async (event): Promise<WeatherApiResponse> => 
           latitude,
           longitude,
           current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,cloud_cover',
-          daily: 'sunrise,sunset',
+          daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset',
           timezone: 'auto',
-          forecast_days: 1,
+          forecast_days: 2,
         },
       }),
       resolveCityName(latitude, longitude),
@@ -76,6 +79,21 @@ export default defineEventHandler(async (event): Promise<WeatherApiResponse> => 
     const current = forecast.current
     const sunriseIso = forecast.daily.sunrise[0]
     const sunsetIso = forecast.daily.sunset[0]
+
+    const tomorrowCode = forecast.daily.weather_code[1]
+    const tomorrowMax = forecast.daily.temperature_2m_max[1]
+    const tomorrowMin = forecast.daily.temperature_2m_min[1]
+    const tomorrow = (
+      typeof tomorrowCode === 'number'
+      && typeof tomorrowMax === 'number'
+      && typeof tomorrowMin === 'number'
+    )
+      ? {
+          tempMax: Math.round(tomorrowMax),
+          tempMin: Math.round(tomorrowMin),
+          weatherCode: tomorrowCode,
+        }
+      : null
 
     return {
       name: city,
@@ -87,6 +105,7 @@ export default defineEventHandler(async (event): Promise<WeatherApiResponse> => 
       cloudPercent: current.cloud_cover,
       sunrise: sunriseIso ? toUnixSeconds(sunriseIso) : Math.floor(Date.now() / 1000),
       sunset: sunsetIso ? toUnixSeconds(sunsetIso) : Math.floor(Date.now() / 1000),
+      tomorrow,
     }
   }
   catch (error: unknown) {

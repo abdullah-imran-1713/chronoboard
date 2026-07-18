@@ -17,6 +17,10 @@ export interface LayoutSettings {
   widgetColumns: 1 | 2 | 3 | 4
   widgetGap: string
   showSettingsButton: boolean
+  /** Soft “Buy me a coffee” line under board content */
+  showSupportOnBoard: boolean
+  /** Last board canvas height used for position % — must persist or refresh drifts widgets */
+  boardHeightPx: number
   /** Widget board positions as % of canvas (top-left). */
   widgetPositions: Record<string, WidgetBoardPosition>
   /** User-dragged widgets keep their place during auto-pack */
@@ -85,4 +89,13 @@ export const WIDGET_BOARD_CARD_MIN_WIDTH_PX = 200
 
 /** Max columns in the default auto-pack */
 export const WIDGET_BOARD_MAX_COLS = 4
+
+/** Board support footer (Buy me a coffee) geometry */
+export const SUPPORT_FOOTER_HEIGHT_PX = 28
+export const SUPPORT_FOOTER_GAP_PX = 14
+export const SUPPORT_FOOTER_END_PAD_PX = 8
+/** Distance from viewport bottom to the footer’s bottom edge when no widgets push it down */
+export const SUPPORT_FOOTER_VIEWPORT_INSET_PX = 36
+/** FAB clearance when support footer is hidden */
+export const BOARD_FAB_CLEARANCE_PX = 120
 

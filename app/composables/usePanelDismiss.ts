@@ -19,6 +19,8 @@ export function usePanelDismiss(
 
     // Keep bottom FABs usable without closing the panel
     if (target.closest('[data-board-fab-rail]')) return
+    // Support visibility tip is teleported to body
+    if (target.closest('[data-support-tip]')) return
 
     const panel = panelRef.value
     if (panel?.contains(target)) return

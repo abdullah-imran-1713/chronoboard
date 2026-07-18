@@ -20,6 +20,8 @@
   /* Font defaults — pref is user setting; --font-size-clock is fluid cap */
   --font-clock: system-ui, sans-serif;
   --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Brand wordmark only (splash / panel titles) — not the clock face */
+  --font-brand: 'Space Grotesk', system-ui, sans-serif;
   --font-size-clock-pref: 6rem;
   --font-size-clock: clamp(2.35rem, 10.5vw + 0.35rem, var(--font-size-clock-pref));
   --font-weight-clock: 700;
@@ -107,6 +109,22 @@ body {
 
 .settings-panel-header {
   border-bottom: var(--hair);
+}
+
+.settings-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 0 0 1px rgba(var(--color-muted-rgb), 0.22);
+}
+
+.settings-brand-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 @media (max-width: 640px) {

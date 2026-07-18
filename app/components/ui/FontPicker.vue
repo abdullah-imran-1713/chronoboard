@@ -23,21 +23,22 @@
         <Icon name="mdi:chevron-down" size="18" class="opacity-60 flex-none" />
       </button>
 
-      <button
-        type="button"
-        class="cb-icobtn font-random-btn flex-none w-[38px] h-[38px] rounded-lg border-none flex items-center justify-center cursor-pointer"
-        :style="{ backgroundColor: 'var(--color-bg)' }"
-        title="Random font"
-        aria-label="Pick a random font"
-        @click="pickRandom"
-      >
-        <Icon
-          name="mdi:dice-5"
-          size="18"
-          class="font-random-icon"
-          :class="{ 'font-random-icon--spin': diceSpinning }"
-        />
-      </button>
+      <CbHint text="Random font">
+        <button
+          type="button"
+          class="cb-icobtn font-random-btn flex-none w-[38px] h-[38px] rounded-lg border-none flex items-center justify-center cursor-pointer"
+          :style="{ backgroundColor: 'var(--color-bg)' }"
+          aria-label="Pick a random font"
+          @click="pickRandom"
+        >
+          <Icon
+            name="mdi:dice-5"
+            size="18"
+            class="font-random-icon"
+            :class="{ 'font-random-icon--spin': diceSpinning }"
+          />
+        </button>
+      </CbHint>
     </div>
 
     <div

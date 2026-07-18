@@ -53,6 +53,8 @@ export const useLayoutStore = defineStore('layout', {
     widgetColumns: 2,
     widgetGap: '1rem',
     showSettingsButton: true,
+    showSupportOnBoard: true,
+    boardHeightPx: 0,
     widgetPositions: {},
     widgetMoved: {},
     widgetSizes: {},
@@ -80,6 +82,12 @@ export const useLayoutStore = defineStore('layout', {
   actions: {
     migrateLayoutRev() {
       if (!this.widgetSizes) this.widgetSizes = {}
+      if (typeof this.showSupportOnBoard !== 'boolean') {
+        this.showSupportOnBoard = true
+      }
+      if (typeof this.boardHeightPx !== 'number' || !Number.isFinite(this.boardHeightPx)) {
+        this.boardHeightPx = 0
+      }
       // Migrate any legacy S/M/L letters → numeric scale
       const next: Record<string, number> = {}
       for (const [id, raw] of Object.entries(this.widgetSizes as Record<string, unknown>)) {
@@ -91,6 +99,7 @@ export const useLayoutStore = defineStore('layout', {
       if ((this.widgetLayoutRev ?? 0) >= WIDGET_LAYOUT_REV) return false
       this.widgetPositions = {}
       this.widgetMoved = {}
+      this.boardHeightPx = 0
       this.widgetLayoutRev = WIDGET_LAYOUT_REV
       return true
     },
@@ -120,6 +129,14 @@ export const useLayoutStore = defineStore('layout', {
       this.setWidgetScale(id, WIDGET_SIZE_SCALE[size])
     },
 
+    setShowSupportOnBoard(show: boolean) {
+      this.showSupportOnBoard = show
+    },
+
+    setBoardHeightPx(height: number) {
+      this.boardHeightPx = Math.max(0, Math.round(height))
+    },
+
     /**
      * Pack unmoved widgets in a row-major grid below the clock.
      * Extra rows extend the board height (page grows). No clamping into the hero.
@@ -129,7 +146,12 @@ export const useLayoutStore = defineStore('layout', {
       canvasWidth: number,
       viewportHeight: number,
       heightsPx: Record<string, number>,
-      options?: { forceAll?: boolean, originYPx?: number },
+      options?: {
+        forceAll?: boolean
+        originYPx?: number
+        currentBoardHeightPx?: number
+        currentCardWidthPx?: number
+      },
     ): { cardWidth: number, boardHeight: number } {
       const gap = 16
       const fallback = {
@@ -141,17 +163,22 @@ export const useLayoutStore = defineStore('layout', {
       const forceAll = options?.forceAll === true
       const packIds = forceAll
         ? [...ids]
-        : ids.filter(id => !this.widgetMoved[id])
+        : ids.filter(id => !this.widgetPositions[id])
 
-      const cols = resolvePackColumns(
-        packIds.length || ids.length,
-        canvasWidth,
-        gap,
-      )
       const gutter = canvasWidth < 480 ? 20 : 32
       const available = Math.max(0, canvasWidth - gutter)
+      const fixedCardWidth = !forceAll && options?.currentCardWidthPx
+        ? Math.min(options.currentCardWidthPx, available)
+        : null
+      const cols = fixedCardWidth
+        ? Math.min(
+            WIDGET_BOARD_MAX_COLS,
+            ids.length,
+            Math.max(1, Math.floor((available + gap) / (fixedCardWidth + gap))),
+          )
+        : resolvePackColumns(ids.length, canvasWidth, gap)
       const ideal = (available - gap * (cols - 1)) / cols
-      const colWidth = Math.min(
+      const colWidth = fixedCardWidth ?? Math.min(
         WIDGET_BOARD_CARD_WIDTH_PX,
         Math.max(Math.min(WIDGET_BOARD_CARD_MIN_WIDTH_PX, available), Math.min(ideal, available)),
       )
@@ -160,18 +187,21 @@ export const useLayoutStore = defineStore('layout', {
       const originY = options?.originYPx
         ?? Math.max(viewportHeight * 0.52, viewportHeight * 0.48 + 64)
 
-      // Obstacles from user-moved widgets (in px vs current board ≈ viewport on first pass)
+      // Every positioned widget is fixed. Only widgets without a position get packed.
       const obstacles: PxRect[] = []
       let contentBottom = originY
+      const currentBoardH = Math.max(
+        options?.currentBoardHeightPx ?? viewportHeight,
+        1,
+      )
 
       for (const id of ids) {
         if (packIds.includes(id)) continue
         const pos = this.widgetPositions[id]
         if (!pos) continue
         const h = Math.max(heightsPx[id] ?? 168, 120)
-        const boardH = Math.max(viewportHeight, 1)
         const left = (pos.x / 100) * canvasWidth
-        const top = (pos.y / 100) * boardH
+        const top = (pos.y / 100) * currentBoardH
         obstacles.push({
           left,
           top,
@@ -258,10 +288,18 @@ export const useLayoutStore = defineStore('layout', {
       this.widgetMoved = rest
     },
 
+    clearWidgetPosition(id: string) {
+      const { [id]: _position, ...positions } = this.widgetPositions
+      const { [id]: _moved, ...moved } = this.widgetMoved
+      this.widgetPositions = positions
+      this.widgetMoved = moved
+    },
+
     resetWidgetPositions() {
       this.widgetPositions = {}
       this.widgetMoved = {}
       this.widgetSizes = {}
+      this.boardHeightPx = 0
     },
   },
 })

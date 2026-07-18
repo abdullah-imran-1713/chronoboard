@@ -2,27 +2,31 @@
   <BaseCard title="Calendar" icon="mdi:calendar-month">
     <div class="space-y-3">
       <div class="flex items-center justify-between">
-        <button
-          type="button"
-          class="p-1 rounded"
-          :style="{ color: 'var(--color-muted)' }"
-          aria-label="Previous month"
-          @click="prevMonth"
-        >
-          <Icon name="mdi:chevron-left" size="20" />
-        </button>
+        <CbHint text="Previous month">
+          <button
+            type="button"
+            class="p-1 rounded"
+            :style="{ color: 'var(--color-muted)' }"
+            aria-label="Previous month"
+            @click="prevMonth"
+          >
+            <Icon name="mdi:chevron-left" size="20" />
+          </button>
+        </CbHint>
         <span class="text-sm font-ui font-medium" :style="{ color: 'var(--color-text)' }">
           {{ monthLabel }}
         </span>
-        <button
-          type="button"
-          class="p-1 rounded"
-          :style="{ color: 'var(--color-muted)' }"
-          aria-label="Next month"
-          @click="nextMonth"
-        >
-          <Icon name="mdi:chevron-right" size="20" />
-        </button>
+        <CbHint text="Next month">
+          <button
+            type="button"
+            class="p-1 rounded"
+            :style="{ color: 'var(--color-muted)' }"
+            aria-label="Next month"
+            @click="nextMonth"
+          >
+            <Icon name="mdi:chevron-right" size="20" />
+          </button>
+        </CbHint>
       </div>
 
       <div class="grid grid-cols-7 gap-1 text-center">

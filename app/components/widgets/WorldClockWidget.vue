@@ -30,16 +30,20 @@
         >
           {{ formatTime(timezone) }}
         </span>
-        <button
+        <CbHint
           v-if="timezones.length > 1"
-          type="button"
-          class="p-1 shrink-0"
-          :style="{ color: 'var(--color-muted)' }"
-          :aria-label="`Remove ${formatLabel(timezone)}`"
-          @click="removeTimezone(timezone)"
+          :text="`Remove ${formatLabel(timezone)}`"
         >
-          <Icon name="mdi:close" size="14" />
-        </button>
+          <button
+            type="button"
+            class="p-1 shrink-0"
+            :style="{ color: 'var(--color-muted)' }"
+            :aria-label="`Remove ${formatLabel(timezone)}`"
+            @click="removeTimezone(timezone)"
+          >
+            <Icon name="mdi:close" size="14" />
+          </button>
+        </CbHint>
       </div>
 
       <button

@@ -157,7 +157,9 @@ export function usePrayerTimes() {
     return {
       name: 'Fajr',
       time: formatPrayerClockTime(sharedPrayers.value.Fajr, format),
-      countdown: 'Tomorrow',
+      countdown: formatCountdown(
+        (24 * 60 - currentMinutes) + timeToMinutes(sharedPrayers.value.Fajr),
+      ),
     }
   })
 

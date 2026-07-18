@@ -41,52 +41,60 @@
         'board-fab-rail--panel-open': panelOpen,
       }"
     >
-      <button
+      <CbHint
         v-if="layoutStore.showSettingsButton"
-        type="button"
-        class="board-fab cb-icobtn"
-        :class="{ 'board-fab--active': showSettings }"
-        :style="fabButtonStyle(showSettings)"
-        :aria-label="showSettings ? 'Close settings' : 'Open settings'"
-        :aria-pressed="showSettings"
-        @click="toggleSettings"
+        :text="showSettings ? 'Close settings' : 'Settings'"
       >
-        <Icon
-          name="mdi:cog-outline"
-          size="22"
-          class="board-fab-glyph board-fab-glyph--cog"
-          :class="{ 'board-fab-glyph--open': showSettings }"
-        />
-      </button>
+        <button
+          type="button"
+          class="board-fab cb-icobtn"
+          :class="{ 'board-fab--active': showSettings }"
+          :style="fabButtonStyle(showSettings)"
+          :aria-label="showSettings ? 'Close settings' : 'Open settings'"
+          :aria-pressed="showSettings"
+          @click="toggleSettings"
+        >
+          <Icon
+            name="mdi:cog-outline"
+            size="22"
+            class="board-fab-glyph board-fab-glyph--cog"
+            :class="{ 'board-fab-glyph--open': showSettings }"
+          />
+        </button>
+      </CbHint>
 
-      <button
-        type="button"
-        class="board-fab cb-icobtn"
-        :class="{ 'board-fab--active': showWidgets }"
-        :style="fabButtonStyle(showWidgets)"
-        :aria-label="showWidgets ? 'Close widgets' : 'Open widgets'"
-        :aria-pressed="showWidgets"
-        @click="toggleWidgets"
-      >
-        <Icon
-          name="mdi:widgets-outline"
-          size="22"
-          class="board-fab-glyph board-fab-glyph--widgets"
-          :class="{ 'board-fab-glyph--open': showWidgets }"
-        />
-      </button>
+      <CbHint :text="showWidgets ? 'Close widgets' : 'Widgets'">
+        <button
+          type="button"
+          class="board-fab cb-icobtn"
+          :class="{ 'board-fab--active': showWidgets }"
+          :style="fabButtonStyle(showWidgets)"
+          :aria-label="showWidgets ? 'Close widgets' : 'Open widgets'"
+          :aria-pressed="showWidgets"
+          @click="toggleWidgets"
+        >
+          <Icon
+            name="mdi:widgets-outline"
+            size="22"
+            class="board-fab-glyph board-fab-glyph--widgets"
+            :class="{ 'board-fab-glyph--open': showWidgets }"
+          />
+        </button>
+      </CbHint>
 
       <AppearanceToggle :fab-style="fabStyle" />
 
-      <button
-        type="button"
-        class="board-fab cb-icobtn"
-        :style="fabStyle"
-        aria-label="Toggle fullscreen"
-        @click="toggleFullscreen"
-      >
-        <Icon :name="isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'" size="22" />
-      </button>
+      <CbHint :text="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+        <button
+          type="button"
+          class="board-fab cb-icobtn"
+          :style="fabStyle"
+          aria-label="Toggle fullscreen"
+          @click="toggleFullscreen"
+        >
+          <Icon :name="isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'" size="22" />
+        </button>
+      </CbHint>
     </div>
 
     <SettingsPanel
@@ -101,6 +109,7 @@
 
     <IslamicFeaturesModal />
     <DesktopExperienceTip />
+    <BrandSplash />
   </main>
 </template>
 

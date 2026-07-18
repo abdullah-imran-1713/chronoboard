@@ -1,3 +1,11 @@
+export interface WeatherDayForecast {
+  /** Expected high °C */
+  tempMax: number
+  /** Expected low °C */
+  tempMin: number
+  weatherCode: number
+}
+
 export interface WeatherData {
   temp: number
   description: string
@@ -11,6 +19,8 @@ export interface WeatherData {
   /** Unix seconds (UTC) — used to refresh day/night icon at boundaries */
   sunrise: number
   sunset: number
+  /** Next calendar day forecast (Open-Meteo daily) */
+  tomorrow: WeatherDayForecast | null
 }
 
 /** Normalized payload from our /api/weather route */
@@ -24,4 +34,5 @@ export interface WeatherApiResponse {
   cloudPercent: number
   sunrise: number
   sunset: number
+  tomorrow: WeatherDayForecast | null
 }

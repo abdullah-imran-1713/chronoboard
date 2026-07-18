@@ -54,22 +54,16 @@
 <script setup lang="ts">
 const { nextPrayer, loading, error, init } = usePrayerTimes()
 
-const isTomorrow = computed(() => nextPrayer.value?.countdown === 'Tomorrow')
-
 const etaValue = computed(() => {
-  if (!nextPrayer.value) return ''
-  if (isTomorrow.value) return 'Tomorrow'
-  return nextPrayer.value.countdown
+  return nextPrayer.value?.countdown ?? ''
 })
 
 const etaSuffix = computed(() => {
-  if (!nextPrayer.value || isTomorrow.value) return ''
-  return 'left'
+  return nextPrayer.value ? 'left' : ''
 })
 
 const etaLabel = computed(() => {
   if (!nextPrayer.value) return ''
-  if (isTomorrow.value) return 'Tomorrow'
   return `${nextPrayer.value.countdown} left`
 })
 

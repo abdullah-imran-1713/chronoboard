@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="widgetStore.activeWidgets.length > 0"
+    v-if="widgetStore.activeWidgets.length > 0 || layoutStore.showSupportOnBoard"
     ref="canvasRef"
     class="widget-canvas absolute inset-x-0 top-0 z-[15] pointer-events-none"
     :data-dragging="draggingId ? 'true' : 'false'"
@@ -34,31 +34,36 @@
         'widget-board-item--invalid': draggingId === widget.id && placementInvalid,
         'widget-board-item--blocked': blockedIds.has(widget.id),
         'widget-board-item--editing': editingId === widget.id,
+        'widget-board-item--chrome': chromeId === widget.id || editingId === widget.id,
       }"
       :style="itemStyle(widget.id)"
       :data-widget-id="widget.id"
       @pointerdown="onPointerDown($event, widget.id)"
     >
       <div class="widget-board-actions">
-        <button
-          type="button"
-          class="widget-board-chrome-btn"
-          :aria-label="`Edit ${widget.name} size`"
-          :aria-expanded="editingId === widget.id"
-          @pointerdown.stop
-          @click.stop="toggleEdit(widget.id)"
-        >
-          <Icon name="mdi:pencil" size="13" />
-        </button>
-        <button
-          type="button"
-          class="widget-board-chrome-btn"
-          :aria-label="`Close ${widget.name}`"
-          @pointerdown.stop
-          @click.stop="closeWidget(widget.id)"
-        >
-          <Icon name="mdi:close" size="14" />
-        </button>
+        <CbHint :text="`Edit ${widget.name} size`">
+          <button
+            type="button"
+            class="widget-board-chrome-btn"
+            :aria-label="`Edit ${widget.name} size`"
+            :aria-expanded="editingId === widget.id"
+            @pointerdown.stop
+            @click.stop="toggleEdit(widget.id)"
+          >
+            <Icon name="mdi:pencil" size="13" />
+          </button>
+        </CbHint>
+        <CbHint :text="`Close ${widget.name}`">
+          <button
+            type="button"
+            class="widget-board-chrome-btn"
+            :aria-label="`Close ${widget.name}`"
+            @pointerdown.stop
+            @click.stop="closeWidget(widget.id)"
+          >
+            <Icon name="mdi:close" size="14" />
+          </button>
+        </CbHint>
       </div>
 
       <WidgetSizePopover
@@ -82,14 +87,33 @@
         />
       </div>
     </div>
+
+    <div
+      v-if="layoutStore.showSupportOnBoard && supportReady"
+      class="widget-support-slot pointer-events-auto"
+      :style="supportSlotStyle"
+      data-board-support-footer
+    >
+      <SupportFooter />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Component } from 'vue'
-import { WIDGET_BOARD_CARD_WIDTH_PX, WIDGET_BOARD_GRID_PX } from '../../../types/settings'
+import {
+  BOARD_FAB_CLEARANCE_PX,
+  SUPPORT_FOOTER_END_PAD_PX,
+  SUPPORT_FOOTER_GAP_PX,
+  SUPPORT_FOOTER_HEIGHT_PX,
+  SUPPORT_FOOTER_VIEWPORT_INSET_PX,
+  WIDGET_BOARD_CARD_WIDTH_PX,
+  WIDGET_BOARD_GRID_PX,
+} from '../../../types/settings'
 
-const LONG_PRESS_MS = 280
+const LONG_PRESS_MS_FINE = 280
+const LONG_PRESS_MS_COARSE = 420
+const CHROME_VISIBLE_MS = 2800
 const MOVE_THRESHOLD_PX = 7
 const COLLISION_PAD = 6
 const HERO_PAD = 12
@@ -103,6 +127,7 @@ interface BoardRect {
 
 const widgetStore = useWidgetStore()
 const layoutStore = useLayoutStore()
+const { isCoarse } = useCoarsePointer()
 
 const emit = defineEmits<{
   'board-height': [height: number]
@@ -117,14 +142,44 @@ const placementInvalid = ref(false)
 const blockedIds = ref<Set<string>>(new Set())
 const heroHintStyle = ref<Record<string, string> | null>(null)
 const cardWidthPx = ref(WIDGET_BOARD_CARD_WIDTH_PX)
-const boardHeightPx = ref(typeof window !== 'undefined' ? window.innerHeight : 800)
+const boardHeightPx = ref(resolveInitialBoardHeight())
 const editingId = ref<string | null>(null)
+const chromeId = ref<string | null>(null)
 const scalePreview = ref<Record<string, number>>({})
+/** Pixel offset from canvas top — set only after client mount (avoid SSR top:0 flash). */
+const footerTopPx = ref(0)
+/** Prefer CSS `bottom` when pinned to the first viewport; use `top` when content pushes further. */
+const footerPinBottom = ref(true)
+const supportReady = ref(false)
+
+const supportSlotStyle = computed(() => {
+  if (footerPinBottom.value) {
+    return {
+      top: 'auto',
+      bottom: `${SUPPORT_FOOTER_VIEWPORT_INSET_PX}px`,
+    }
+  }
+  const top = Number.isFinite(footerTopPx.value) ? Math.max(0, footerTopPx.value) : 0
+  return {
+    top: `${top}px`,
+    bottom: 'auto',
+  }
+})
+
+function resolveInitialBoardHeight() {
+  if (!import.meta.client) return 800
+  const saved = layoutStore.boardHeightPx
+  const viewport = window.innerHeight
+  // Use persisted height so % positions don’t jump onto the clock on refresh
+  if (saved >= viewport) return saved
+  return Math.max(viewport, 1)
+}
 
 let pressTimer: ReturnType<typeof setTimeout> | null = null
 let pressId: string | null = null
 let pressStart = { x: 0, y: 0 }
 let pressItem: HTMLElement | null = null
+let chromeTimer: ReturnType<typeof setTimeout> | null = null
 
 const widgetModules = import.meta.glob('./*Widget.vue')
 const componentCache = new Map<string, Component>()
@@ -159,11 +214,41 @@ function itemStyle(id: string) {
   }
 }
 
+function clearChromeTimer() {
+  if (!chromeTimer) return
+  clearTimeout(chromeTimer)
+  chromeTimer = null
+}
+
+/** Touch/tablet: briefly reveal edit/close chrome after a tap. */
+function revealChrome(id: string) {
+  chromeId.value = id
+  clearChromeTimer()
+  chromeTimer = setTimeout(() => {
+    if (editingId.value === id) return
+    if (chromeId.value === id) chromeId.value = null
+    chromeTimer = null
+  }, CHROME_VISIBLE_MS)
+}
+
+function hideChrome(id?: string) {
+  if (id && chromeId.value !== id) return
+  chromeId.value = null
+  clearChromeTimer()
+}
+
 function toggleEdit(id: string) {
   if (editingId.value === id) {
     clearScalePreview(id)
+    editingId.value = null
+    if (isCoarse.value) revealChrome(id)
+    return
   }
-  editingId.value = editingId.value === id ? null : id
+  editingId.value = id
+  if (isCoarse.value) {
+    chromeId.value = id
+    clearChromeTimer()
+  }
 }
 
 function widgetScale(id: string) {
@@ -190,19 +275,26 @@ function onScaleCommit(id: string, scale?: number) {
 }
 
 function closeEditOnOutside(event: PointerEvent) {
-  if (!editingId.value) return
   const target = event.target
   if (!(target instanceof Element)) return
-  if (target.closest(`[data-widget-id="${editingId.value}"]`)) return
-  clearScalePreview(editingId.value)
-  editingId.value = null
+
+  if (editingId.value) {
+    if (target.closest(`[data-widget-id="${editingId.value}"]`)) return
+    clearScalePreview(editingId.value)
+    editingId.value = null
+  }
+
+  if (chromeId.value) {
+    if (target.closest(`[data-widget-id="${chromeId.value}"]`)) return
+    hideChrome()
+  }
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
   return Boolean(
     target.closest(
-      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover]',
+      'button, a, input, textarea, select, option, label, [role="switch"], [role="slider"], [contenteditable="true"], [data-widget-size-popover], [data-widget-swipe]',
     ),
   )
 }
@@ -265,24 +357,157 @@ function packOriginY(_canvasHeight: number): number {
   return Math.max(window.innerHeight * 0.55, window.innerHeight * 0.5 + 80)
 }
 
+function measureLowestContentBottom(): number {
+  if (!canvasRef.value) return 0
+  const canvas = canvasRect()
+  if (!canvas) return 0
+
+  let maxBottom = 0
+  for (const widget of widgetStore.activeWidgets) {
+    const el = canvasRef.value.querySelector(
+      `[data-widget-id="${widget.id}"]`,
+    ) as HTMLElement | null
+    if (!el) continue
+    const r = el.getBoundingClientRect()
+    maxBottom = Math.max(maxBottom, r.bottom - canvas.top)
+  }
+  return maxBottom
+}
+
+/**
+ * Footer sits under the lowest widget (or pinned near the viewport bottom).
+ * Page height ends at the footer — no empty scroll below.
+ */
+function syncBoardExtent() {
+  if (!import.meta.client) return
+
+  const viewportH = Math.max(1, window.innerHeight || 800)
+  const contentBottom = Math.max(0, measureLowestContentBottom())
+  const showSupport = layoutStore.showSupportOnBoard
+
+  let nextHeight: number
+  if (showSupport) {
+    const pinnedTop = Math.max(
+      0,
+      viewportH - SUPPORT_FOOTER_VIEWPORT_INSET_PX - SUPPORT_FOOTER_HEIGHT_PX,
+    )
+    const belowContent = contentBottom > 0
+      ? contentBottom + SUPPORT_FOOTER_GAP_PX
+      : pinnedTop
+    const nextTop = Math.max(pinnedTop, belowContent)
+    footerTopPx.value = nextTop
+    // Pin with CSS `bottom` when we're still on the first screen — avoids SSR/hydration top:0.
+    footerPinBottom.value = nextTop <= pinnedTop + 1
+    nextHeight = Math.max(
+      viewportH,
+      nextTop + SUPPORT_FOOTER_HEIGHT_PX + SUPPORT_FOOTER_END_PAD_PX,
+    )
+  }
+  else {
+    footerPinBottom.value = true
+    nextHeight = Math.max(
+      viewportH,
+      contentBottom > 0 ? contentBottom + BOARD_FAB_CLEARANCE_PX : viewportH,
+    )
+  }
+
+  const prevH = Math.max(boardHeightPx.value, 1)
+  if (Math.abs(nextHeight - prevH) >= 0.5) {
+    const snapshots = widgetStore.activeWidgets.flatMap((widget) => {
+      const pos = (draggingId.value === widget.id && livePosition.value)
+        ? livePosition.value
+        : layoutStore.getPosition(widget.id)
+      if (!pos) return []
+      return [{
+        id: widget.id,
+        x: pos.x,
+        topPx: (pos.y / 100) * prevH,
+      }]
+    })
+
+    boardHeightPx.value = nextHeight
+
+    for (const snap of snapshots) {
+      const nextPos = {
+        x: snap.x,
+        y: (snap.topPx / nextHeight) * 100,
+      }
+      if (draggingId.value === snap.id && livePosition.value) {
+        livePosition.value = nextPos
+      }
+      else {
+        layoutStore.setWidgetPosition(snap.id, nextPos)
+      }
+    }
+  }
+
+  emit('board-height', boardHeightPx.value)
+  layoutStore.setBoardHeightPx(boardHeightPx.value)
+}
+
 function packBoard(options?: { forceAll?: boolean }) {
   const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvas) {
+    syncBoardExtent()
+    return
+  }
+
+  if (widgetStore.activeWidgets.length === 0) {
+    cardWidthPx.value = WIDGET_BOARD_CARD_WIDTH_PX
+    syncBoardExtent()
+    return
+  }
+
+  const forceAll = options?.forceAll === true
+  const ids = widgetStore.activeWidgets.map(w => w.id)
+
+  // Critical: if every widget already has a saved spot, do not rewrite positions.
+  // Refresh/resize used to re-percent them against the wrong board height and
+  // slide widgets onto the clock or over each other.
+  if (!forceAll && ids.every(id => layoutStore.getPosition(id))) {
+    syncBoardExtent()
+    return
+  }
+
   const width = canvas.clientWidth || window.innerWidth
   const viewportH = window.innerHeight
+  const currentBoardH = Math.max(boardHeightPx.value, viewportH)
+  const fixedPositions = forceAll
+    ? []
+    : widgetStore.activeWidgets.flatMap((widget) => {
+        const position = layoutStore.getPosition(widget.id)
+        if (!position) return []
+        return [{
+          id: widget.id,
+          x: position.x,
+          topPx: (position.y / 100) * currentBoardH,
+        }]
+      })
+
   const result = layoutStore.packDefaultLayout(
-    widgetStore.activeWidgets.map(w => w.id),
+    ids,
     width,
     viewportH,
     measureHeights(),
     {
-      forceAll: options?.forceAll,
+      forceAll,
       originYPx: packOriginY(viewportH),
+      currentBoardHeightPx: currentBoardH,
+      currentCardWidthPx: cardWidthPx.value,
     },
   )
+
+  for (const fixed of fixedPositions) {
+    layoutStore.setWidgetPosition(fixed.id, {
+      x: fixed.x,
+      y: (fixed.topPx / result.boardHeight) * 100,
+    })
+  }
+
   cardWidthPx.value = result.cardWidth
   boardHeightPx.value = result.boardHeight
-  emit('board-height', result.boardHeight)
+  layoutStore.setBoardHeightPx(result.boardHeight)
+  syncBoardExtent()
 }
 
 async function refreshLayout(options?: { forceAll?: boolean }) {
@@ -297,31 +522,58 @@ async function refreshLayout(options?: { forceAll?: boolean }) {
 
 watch(
   () => widgetStore.enabledWidgets.slice(),
-  async () => {
+  async (_enabled, previouslyEnabled = []) => {
+    const enabled = new Set(_enabled)
+    for (const id of previouslyEnabled) {
+      if (!enabled.has(id)) layoutStore.clearWidgetPosition(id)
+    }
     await refreshLayout()
+  },
+)
+
+watch(
+  () => layoutStore.showSupportOnBoard,
+  () => {
+    nextTick(() => syncBoardExtent())
   },
 )
 
 onMounted(async () => {
   const migrated = layoutStore.migrateLayoutRev()
+  if (layoutStore.boardHeightPx > boardHeightPx.value) {
+    boardHeightPx.value = layoutStore.boardHeightPx
+  }
+  // Only full-pack when layout was wiped by migration or nothing is saved yet.
+  // Never reshuffle existing placements on ordinary refresh.
   const needsFullPack = migrated || Object.keys(layoutStore.widgetPositions).length === 0
   await refreshLayout({ forceAll: needsFullPack })
+  syncBoardExtent()
+  supportReady.value = true
+  // Second pass after paint — widget async cards can still settle.
+  await nextTick()
+  requestAnimationFrame(() => syncBoardExtent())
   window.addEventListener('chronoboard:repack-widgets', onRepackEvent)
+  window.addEventListener('chronoboard:support-visibility', onSupportVisibility)
   window.addEventListener('resize', onResize)
   window.addEventListener('orientationchange', onResize)
   document.addEventListener('pointerdown', closeEditOnOutside, true)
 })
 
-function onRepackEvent() {
-  void refreshLayout({ forceAll: true })
+function onRepackEvent(event: Event) {
+  const forceAll = event instanceof CustomEvent && event.detail?.forceAll === true
+  void refreshLayout({ forceAll })
+}
+
+function onSupportVisibility() {
+  nextTick(() => syncBoardExtent())
 }
 
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
 function onResize() {
   if (resizeTimer) clearTimeout(resizeTimer)
   resizeTimer = setTimeout(() => {
-    const anyMoved = widgetStore.activeWidgets.some(w => layoutStore.wasMoved(w.id))
-    void refreshLayout({ forceAll: !anyMoved })
+    // Resize must never force-repack placed widgets
+    void refreshLayout({ forceAll: false })
   }, 180)
 }
 
@@ -400,8 +652,9 @@ function evaluatePlacement(id: string, left: number, top: number, el: HTMLElemen
 
 function closeWidget(id: string) {
   if (editingId.value === id) editingId.value = null
+  hideChrome(id)
+  layoutStore.clearWidgetPosition(id)
   widgetStore.setWidgetEnabled(id, false)
-  layoutStore.clearMoved(id)
 }
 
 function clearPress() {
@@ -412,13 +665,14 @@ function clearPress() {
   pressId = null
   pressItem = null
   window.removeEventListener('pointermove', onPressMove)
-  window.removeEventListener('pointerup', onPressCancel)
+  window.removeEventListener('pointerup', onPressUp)
   window.removeEventListener('pointercancel', onPressCancel)
 }
 
 function beginDrag(id: string, item: HTMLElement, clientX: number, clientY: number) {
   clearScalePreview(id)
   editingId.value = null
+  hideChrome()
   const rect = canvasRect()
   if (!rect) return
 
@@ -455,15 +709,16 @@ function onPointerDown(event: PointerEvent, id: string) {
   pressItem = item
   pressStart = { x: event.clientX, y: event.clientY }
 
+  const holdMs = isCoarse.value ? LONG_PRESS_MS_COARSE : LONG_PRESS_MS_FINE
   pressTimer = setTimeout(() => {
     if (pressId === id && pressItem) {
       beginDrag(id, pressItem, pressStart.x, pressStart.y)
       clearPress()
     }
-  }, LONG_PRESS_MS)
+  }, holdMs)
 
   window.addEventListener('pointermove', onPressMove)
-  window.addEventListener('pointerup', onPressCancel)
+  window.addEventListener('pointerup', onPressUp)
   window.addEventListener('pointercancel', onPressCancel)
 }
 
@@ -478,6 +733,13 @@ function onPressMove(event: PointerEvent) {
   clearPress()
   beginDrag(id, item, event.clientX, event.clientY)
   onPointerMove(event)
+}
+
+function onPressUp() {
+  const id = pressId
+  clearPress()
+  if (!id || draggingId.value) return
+  if (isCoarse.value) revealChrome(id)
 }
 
 function onPressCancel() {
@@ -497,6 +759,7 @@ function onPointerMove(event: PointerEvent) {
   const { left, top } = clampToCanvas(snap(rawLeft), snap(rawTop), el)
   livePosition.value = toPercent(left, top)
   evaluatePlacement(draggingId.value, left, top, el)
+  scheduleExtentSync()
 }
 
 function onPointerUp() {
@@ -520,12 +783,28 @@ function onPointerUp() {
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
   window.removeEventListener('pointercancel', onPointerUp)
+
+  nextTick(() => {
+    syncBoardExtent()
+  })
+}
+
+let extentRaf: number | null = null
+function scheduleExtentSync() {
+  if (extentRaf != null) return
+  extentRaf = requestAnimationFrame(() => {
+    extentRaf = null
+    syncBoardExtent()
+  })
 }
 
 onUnmounted(() => {
   clearPress()
+  clearChromeTimer()
+  if (extentRaf != null) cancelAnimationFrame(extentRaf)
   if (resizeTimer) clearTimeout(resizeTimer)
   window.removeEventListener('chronoboard:repack-widgets', onRepackEvent)
+  window.removeEventListener('chronoboard:support-visibility', onSupportVisibility)
   window.removeEventListener('resize', onResize)
   window.removeEventListener('orientationchange', onResize)
   window.removeEventListener('pointermove', onPointerMove)
@@ -602,6 +881,10 @@ onUnmounted(() => {
   touch-action: manipulation;
 }
 
+.widget-board-item--chrome {
+  z-index: 6;
+}
+
 .widget-board-actions {
   position: absolute;
   top: 8px;
@@ -624,14 +907,23 @@ onUnmounted(() => {
   color: var(--color-muted);
   background: rgba(var(--color-bg-rgb), 0.75);
   opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.2s ease;
+  transform: scale(0.92);
 }
 
 .widget-board-item:hover .widget-board-chrome-btn,
 .widget-board-item:focus-within .widget-board-chrome-btn,
+.widget-board-item--chrome .widget-board-chrome-btn,
 .widget-board-item--editing .widget-board-chrome-btn,
 .widget-board-chrome-btn:focus-visible {
   opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
 }
 
 .widget-board-chrome-btn:hover {
@@ -647,9 +939,31 @@ onUnmounted(() => {
   width: 100%;
 }
 
-@media (pointer: coarse) {
-  .widget-board-chrome-btn {
-    opacity: 0.85;
+.widget-support-slot {
+  position: absolute;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 7.5rem);
+  pointer-events: auto;
+}
+
+/* Phones / tablets: no hover — chrome only after an explicit tap */
+@media (hover: none), (pointer: coarse) {
+  .widget-board-item:hover .widget-board-chrome-btn {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+  }
+
+  .widget-board-item--chrome .widget-board-chrome-btn,
+  .widget-board-item--editing .widget-board-chrome-btn,
+  .widget-board-item:focus-within .widget-board-chrome-btn,
+  .widget-board-chrome-btn:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
   }
 }
 

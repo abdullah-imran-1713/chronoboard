@@ -14,6 +14,7 @@ export default <Config>{
       fontFamily: {
         clock: ['var(--font-clock)', 'monospace'],
         ui: ['var(--font-ui)', 'system-ui', 'sans-serif'],
+        brand: ['var(--font-brand)', 'system-ui', 'sans-serif'],
       },
       colors: {
         clock: {
