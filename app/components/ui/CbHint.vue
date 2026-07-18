@@ -252,18 +252,30 @@ onUnmounted(() => {
 }
 
 .cb-hint--fab {
-  display: flex;
+  display: inline-flex;
   flex: none;
   width: var(--fab-size);
   height: var(--fab-size);
   max-width: none;
   border-radius: 999px;
-  align-items: stretch;
-  justify-content: stretch;
+  align-items: center;
+  justify-content: center;
 }
 
 .cb-hint--fab .cb-hint-target {
-  display: contents;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  max-width: none;
+}
+
+.cb-hint--fab .cb-hint-target > :deep(.board-fab) {
+  width: var(--fab-size);
+  height: var(--fab-size);
+  margin: 0;
+  flex: none;
 }
 
 .cb-hint-target {

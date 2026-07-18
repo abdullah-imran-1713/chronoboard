@@ -518,6 +518,24 @@ async function refreshLayout(options?: { forceAll?: boolean }) {
   // Async widgets may still grow — second pass
   await new Promise<void>(resolve => setTimeout(resolve, 80))
   packBoard(options)
+  // Weather / prayer / Quran often settle later — keep footer under content
+  scheduleSupportResync()
+}
+
+let supportResyncTimers: ReturnType<typeof setTimeout>[] = []
+function clearSupportResyncTimers() {
+  for (const t of supportResyncTimers) clearTimeout(t)
+  supportResyncTimers = []
+}
+
+function scheduleSupportResync() {
+  if (!import.meta.client || !layoutStore.showSupportOnBoard) return
+  clearSupportResyncTimers()
+  for (const delay of [120, 400, 900, 1600]) {
+    supportResyncTimers.push(setTimeout(() => {
+      syncBoardExtent()
+    }, delay))
+  }
 }
 
 watch(
@@ -528,6 +546,8 @@ watch(
       if (!enabled.has(id)) layoutStore.clearWidgetPosition(id)
     }
     await refreshLayout()
+    await nextTick()
+    refreshWidgetResizeObserver()
   },
 )
 
@@ -552,6 +572,8 @@ onMounted(async () => {
   // Second pass after paint — widget async cards can still settle.
   await nextTick()
   requestAnimationFrame(() => syncBoardExtent())
+  scheduleSupportResync()
+  bindWidgetResizeObserver()
   window.addEventListener('chronoboard:repack-widgets', onRepackEvent)
   window.addEventListener('chronoboard:support-visibility', onSupportVisibility)
   window.addEventListener('resize', onResize)
@@ -559,13 +581,56 @@ onMounted(async () => {
   document.addEventListener('pointerdown', closeEditOnOutside, true)
 })
 
+let widgetResizeObserver: ResizeObserver | null = null
+let resizeSyncRaf = 0
+
+function bindWidgetResizeObserver() {
+  if (!import.meta.client || typeof ResizeObserver === 'undefined') return
+  unbindWidgetResizeObserver()
+  widgetResizeObserver = new ResizeObserver(() => {
+    if (resizeSyncRaf) cancelAnimationFrame(resizeSyncRaf)
+    resizeSyncRaf = requestAnimationFrame(() => {
+      resizeSyncRaf = 0
+      syncBoardExtent()
+    })
+  })
+  const canvas = canvasRef.value
+  if (!canvas) return
+  for (const el of canvas.querySelectorAll('[data-widget-id]')) {
+    widgetResizeObserver.observe(el)
+  }
+}
+
+function unbindWidgetResizeObserver() {
+  if (resizeSyncRaf) {
+    cancelAnimationFrame(resizeSyncRaf)
+    resizeSyncRaf = 0
+  }
+  widgetResizeObserver?.disconnect()
+  widgetResizeObserver = null
+}
+
+function refreshWidgetResizeObserver() {
+  if (!widgetResizeObserver || !canvasRef.value) {
+    bindWidgetResizeObserver()
+    return
+  }
+  widgetResizeObserver.disconnect()
+  for (const el of canvasRef.value.querySelectorAll('[data-widget-id]')) {
+    widgetResizeObserver.observe(el)
+  }
+}
+
 function onRepackEvent(event: Event) {
   const forceAll = event instanceof CustomEvent && event.detail?.forceAll === true
   void refreshLayout({ forceAll })
 }
 
 function onSupportVisibility() {
-  nextTick(() => syncBoardExtent())
+  nextTick(() => {
+    syncBoardExtent()
+    scheduleSupportResync()
+  })
 }
 
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -801,6 +866,8 @@ function scheduleExtentSync() {
 onUnmounted(() => {
   clearPress()
   clearChromeTimer()
+  clearSupportResyncTimers()
+  unbindWidgetResizeObserver()
   if (extentRaf != null) cancelAnimationFrame(extentRaf)
   if (resizeTimer) clearTimeout(resizeTimer)
   window.removeEventListener('chronoboard:repack-widgets', onRepackEvent)

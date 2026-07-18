@@ -86,10 +86,13 @@
         </button>
       </CbHint>
 
-      <AppearanceToggle
+      <CbHint
         v-if="themeStore.showAppearanceToggle"
-        :fab-style="fabStyle"
-      />
+        layout="fab"
+        :text="themeStore.resolvedScheme === 'dark' ? 'Light mode' : 'Dark mode'"
+      >
+        <AppearanceToggle :fab-style="fabStyle" />
+      </CbHint>
 
       <CbHint
         layout="fab"

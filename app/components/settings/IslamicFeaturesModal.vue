@@ -4,6 +4,7 @@
       <div
         v-if="open"
         class="fixed inset-0 z-[70] flex items-center justify-center p-4"
+        data-islamic-features-modal
       >
         <button
           type="button"

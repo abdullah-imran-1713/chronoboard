@@ -21,6 +21,10 @@ export function usePanelDismiss(
     if (target.closest('[data-board-fab-rail]')) return
     // Support visibility tip is teleported to body
     if (target.closest('[data-support-tip]')) return
+    // Islamic features prompt is teleported to body — keep settings/widgets open
+    if (target.closest('[data-islamic-features-modal]')) return
+    // Confirm dialogs teleported to body
+    if (target.closest('[data-confirm-dialog]')) return
 
     const panel = panelRef.value
     if (panel?.contains(target)) return

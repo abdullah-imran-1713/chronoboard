@@ -37,18 +37,16 @@
         </p>
 
         <div class="flex items-center gap-1">
-          <CbHint text="Previous presets" :blocked="presetPage <= 0 || isSliding">
-            <button
-              type="button"
-              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-              :style="{ color: 'var(--color-muted)' }"
-              :disabled="presetPage <= 0 || isSliding"
-              aria-label="Previous presets"
-              @click="goPresetPage(presetPage - 1)"
-            >
-              <Icon name="mdi:chevron-left" size="20" />
-            </button>
-          </CbHint>
+          <button
+            type="button"
+            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+            :style="{ color: 'var(--color-muted)' }"
+            :disabled="presetPage <= 0 || isSliding"
+            aria-label="Previous presets"
+            @click="goPresetPage(presetPage - 1)"
+          >
+            <Icon name="mdi:chevron-left" size="20" />
+          </button>
 
           <div
             class="preset-viewport flex-1 min-w-0 overflow-hidden"
@@ -100,18 +98,16 @@
             </div>
           </div>
 
-          <CbHint text="Next presets" :blocked="presetPage >= presetPageCount - 1 || isSliding">
-            <button
-              type="button"
-              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-              :style="{ color: 'var(--color-muted)' }"
-              :disabled="presetPage >= presetPageCount - 1 || isSliding"
-              aria-label="Next presets"
-              @click="goPresetPage(presetPage + 1)"
-            >
-              <Icon name="mdi:chevron-right" size="20" />
-            </button>
-          </CbHint>
+          <button
+            type="button"
+            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+            :style="{ color: 'var(--color-muted)' }"
+            :disabled="presetPage >= presetPageCount - 1 || isSliding"
+            aria-label="Next presets"
+            @click="goPresetPage(presetPage + 1)"
+          >
+            <Icon name="mdi:chevron-right" size="20" />
+          </button>
         </div>
       </div>
 
@@ -299,7 +295,7 @@
                   class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
                   :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
                   aria-label="Delete preset"
-                  @click.stop="deleteUserPreset(preset.id)"
+                  @click.stop="askDeletePreset(preset)"
                 >
                   <Icon name="mdi:close" size="12" />
                 </button>
@@ -313,18 +309,16 @@
           v-else
           class="flex items-center gap-1"
         >
-          <CbHint text="Previous my presets" :blocked="myPage <= 0 || mySliding">
-            <button
-              type="button"
-              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-              :style="{ color: 'var(--color-muted)' }"
-              :disabled="myPage <= 0 || mySliding"
-              aria-label="Previous my presets"
-              @click="goMyPage(myPage - 1)"
-            >
-              <Icon name="mdi:chevron-left" size="20" />
-            </button>
-          </CbHint>
+          <button
+            type="button"
+            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+            :style="{ color: 'var(--color-muted)' }"
+            :disabled="myPage <= 0 || mySliding"
+            aria-label="Previous my presets"
+            @click="goMyPage(myPage - 1)"
+          >
+            <Icon name="mdi:chevron-left" size="20" />
+          </button>
 
           <div
             class="preset-viewport flex-1 min-w-0 overflow-hidden"
@@ -399,7 +393,7 @@
                         class="w-5 h-5 rounded-full flex items-center justify-center border-none cursor-pointer"
                         :style="{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }"
                         aria-label="Delete preset"
-                        @click.stop="deleteUserPreset(preset.id)"
+                        @click.stop="askDeletePreset(preset)"
                       >
                         <Icon name="mdi:close" size="12" />
                       </button>
@@ -410,18 +404,16 @@
             </div>
           </div>
 
-          <CbHint text="Next my presets" :blocked="myPage >= myPageCount - 1 || mySliding">
-            <button
-              type="button"
-              class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
-              :style="{ color: 'var(--color-muted)' }"
-              :disabled="myPage >= myPageCount - 1 || mySliding"
-              aria-label="Next my presets"
-              @click="goMyPage(myPage + 1)"
-            >
-              <Icon name="mdi:chevron-right" size="20" />
-            </button>
-          </CbHint>
+          <button
+            type="button"
+            class="cb-icobtn flex-none w-7 h-7 rounded-lg border-none bg-transparent flex items-center justify-center cursor-pointer disabled:opacity-25 disabled:cursor-default"
+            :style="{ color: 'var(--color-muted)' }"
+            :disabled="myPage >= myPageCount - 1 || mySliding"
+            aria-label="Next my presets"
+            @click="goMyPage(myPage + 1)"
+          >
+            <Icon name="mdi:chevron-right" size="20" />
+          </button>
         </div>
 
         <div
@@ -512,6 +504,65 @@
         </div>
       </Transition>
     </Teleport>
+
+    <Teleport to="body">
+      <Transition name="settings-scrim">
+        <div
+          v-if="pendingDelete"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          data-confirm-dialog
+        >
+          <button
+            type="button"
+            class="absolute inset-0 bg-black/55 border-none cursor-default"
+            aria-label="Cancel"
+            @click="cancelDeletePreset"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-preset-title"
+            class="relative w-full max-w-sm rounded-xl p-6 font-ui shadow-2xl"
+            :style="{
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              border: '1px solid rgba(var(--color-muted-rgb), 0.2)',
+            }"
+            @keydown.escape.stop="cancelDeletePreset"
+          >
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <h2 id="delete-preset-title" class="text-lg font-bold tracking-tight m-0">
+                  Delete preset?
+                </h2>
+                <p
+                  class="text-sm leading-relaxed m-0"
+                  :style="{ color: 'var(--color-secondary)' }"
+                >
+                  Remove “{{ pendingDelete.name }}”? This can’t be undone.
+                </p>
+              </div>
+              <div class="flex items-center justify-end gap-2.5 pt-1">
+                <button
+                  type="button"
+                  class="preset-mini-btn preset-mini-btn--ghost"
+                  @click="cancelDeletePreset"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="cb-btn-primary"
+                  @click="confirmDeletePreset"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -551,6 +602,7 @@ let editRestoreColors: ThemeColors | null = null
 const importInputRef = ref<HTMLInputElement | null>(null)
 const toastMessage = ref('')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+const pendingDelete = ref<UserColorPreset | null>(null)
 
 const themes: { name: ThemeName, label: string, preview: string }[] = [
   { name: 'dark', label: 'Dark', preview: '#0a0a0a' },
@@ -914,6 +966,22 @@ function confirmEdit() {
   editError.value = ''
   editRestoreColors = null
   showToast('Preset updated')
+}
+
+function askDeletePreset(preset: UserColorPreset) {
+  pendingDelete.value = preset
+}
+
+function cancelDeletePreset() {
+  pendingDelete.value = null
+}
+
+function confirmDeletePreset() {
+  const preset = pendingDelete.value
+  pendingDelete.value = null
+  if (!preset) return
+  deleteUserPreset(preset.id)
+  showToast('Preset deleted')
 }
 
 function deleteUserPreset(id: string) {
