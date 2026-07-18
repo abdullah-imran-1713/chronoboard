@@ -74,7 +74,6 @@ const {
 } = useWorldClock()
 
 function onAddTimezone() {
-  const unused = availableTimezones.value.find(tz => !timezones.value.includes(tz))
-  if (unused) addTimezone(unused)
+  addTimezone()
 }
 </script>

@@ -119,27 +119,31 @@
         role="group"
         aria-label="Weather day"
       >
-        <button
-          type="button"
-          class="weather-day-nav"
-          :disabled="!canGoToday"
-          aria-label="Show today’s weather"
-          @click.stop="goToday"
-        >
-          <Icon name="mdi:chevron-left" size="16" />
-        </button>
+        <div class="weather-pager-side">
+          <button
+            v-if="canGoToday"
+            type="button"
+            class="weather-day-nav"
+            aria-label="Show today’s weather"
+            @click.stop="goToday"
+          >
+            <Icon name="mdi:chevron-left" size="16" />
+          </button>
+        </div>
         <span class="weather-pager-label tabular-nums">
           {{ dayIndex === 0 ? 'Today' : 'Tomorrow' }}
         </span>
-        <button
-          type="button"
-          class="weather-day-nav"
-          :disabled="!canGoTomorrow"
-          aria-label="Show tomorrow’s weather"
-          @click.stop="goTomorrow"
-        >
-          <Icon name="mdi:chevron-right" size="16" />
-        </button>
+        <div class="weather-pager-side">
+          <button
+            v-if="canGoTomorrow"
+            type="button"
+            class="weather-day-nav"
+            aria-label="Show tomorrow’s weather"
+            @click.stop="goTomorrow"
+          >
+            <Icon name="mdi:chevron-right" size="16" />
+          </button>
+        </div>
       </div>
 
       <p
@@ -411,11 +415,20 @@ async function onRefresh() {
 }
 
 .weather-pager {
+  display: grid;
+  grid-template-columns: 22px minmax(4.75rem, auto) 22px;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.35rem;
+  min-height: 22px;
+}
+
+.weather-pager-side {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  min-height: 22px;
+  width: 22px;
+  height: 22px;
 }
 
 .weather-pager-label {
@@ -448,18 +461,12 @@ async function onRefresh() {
 }
 
 .weather-pager[data-reveal='true'] .weather-day-nav {
-  opacity: 0.7;
+  opacity: 0.85;
   pointer-events: auto;
 }
 
-.weather-pager[data-reveal='true'] .weather-day-nav:disabled {
-  opacity: 0.22;
-  pointer-events: none;
-  cursor: default;
-}
-
-.weather-pager[data-reveal='true'] .weather-day-nav:not(:disabled):hover,
-.weather-pager[data-reveal='true'] .weather-day-nav:not(:disabled):focus-visible {
+.weather-pager[data-reveal='true'] .weather-day-nav:hover,
+.weather-pager[data-reveal='true'] .weather-day-nav:focus-visible {
   opacity: 1;
   color: var(--color-text);
   background: rgba(var(--color-muted-rgb), 0.14);
@@ -467,8 +474,8 @@ async function onRefresh() {
 }
 
 @media (hover: none), (pointer: coarse) {
-  .weather-pager[data-reveal='true'] .weather-day-nav:not(:disabled) {
-    opacity: 0.85;
+  .weather-pager[data-reveal='true'] .weather-day-nav {
+    opacity: 0.9;
   }
 }
 
