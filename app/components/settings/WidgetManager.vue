@@ -32,7 +32,7 @@
           <CbHint
             v-for="widget in widgets"
             :key="widget.id"
-            class="widget-tile-hint"
+            layout="fill"
             :text="widget.description"
           >
             <button
@@ -215,17 +215,6 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.widget-tile-hint {
-  display: block;
-  width: 100%;
-  max-width: none;
-}
-
-.widget-tile-hint :deep(.cb-hint-target) {
-  display: block;
-  width: 100%;
-}
-
 @media (max-width: 380px) {
   .widget-tile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -238,6 +227,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 7px;
+  width: 100%;
   min-height: 72px;
   padding: 10px 6px 8px;
   border-radius: 14px;

@@ -43,6 +43,7 @@
     >
       <CbHint
         v-if="layoutStore.showSettingsButton"
+        layout="fab"
         :text="showSettings ? 'Close settings' : 'Settings'"
       >
         <button
@@ -63,7 +64,10 @@
         </button>
       </CbHint>
 
-      <CbHint :text="showWidgets ? 'Close widgets' : 'Widgets'">
+      <CbHint
+        layout="fab"
+        :text="showWidgets ? 'Close widgets' : 'Widgets'"
+      >
         <button
           type="button"
           class="board-fab cb-icobtn"
@@ -82,9 +86,15 @@
         </button>
       </CbHint>
 
-      <AppearanceToggle :fab-style="fabStyle" />
+      <AppearanceToggle
+        v-if="themeStore.showAppearanceToggle"
+        :fab-style="fabStyle"
+      />
 
-      <CbHint :text="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+      <CbHint
+        layout="fab"
+        :text="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+      >
         <button
           type="button"
           class="board-fab cb-icobtn"

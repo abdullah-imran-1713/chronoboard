@@ -72,7 +72,7 @@
                 <CbHint
                   v-for="palette in page"
                   :key="palette.id"
-                  class="preset-sw-hint"
+                  layout="fill"
                   :text="palette.name"
                 >
                   <button
@@ -252,7 +252,7 @@
             :key="preset.id"
             class="relative group"
           >
-            <CbHint class="preset-sw-hint" :text="preset.name">
+            <CbHint layout="fill" :text="preset.name">
               <button
                 type="button"
                 class="preset-sw w-full"
@@ -352,7 +352,7 @@
                   class="relative group"
                   :class="page.length < 3 ? 'preset-slot' : undefined"
                 >
-                  <CbHint class="preset-sw-hint" :text="preset.name">
+                  <CbHint layout="fill" :text="preset.name">
                     <button
                       type="button"
                       class="preset-sw w-full"
@@ -1002,17 +1002,6 @@ async function onImportFile(event: Event) {
   max-width: calc((100% - 1rem) / 3);
 }
 
-.preset-sw-hint {
-  display: block;
-  width: 100%;
-  max-width: none;
-}
-
-.preset-sw-hint :deep(.cb-hint-target) {
-  display: block;
-  width: 100%;
-}
-
 .preset-sw {
   border: none;
   background: transparent;
@@ -1025,6 +1014,7 @@ async function onImportFile(event: Event) {
   border-radius: 8px;
   font-family: inherit;
   outline: none;
+  width: 100%;
 }
 
 .preset-sw:focus-visible .preset-sw-pill {

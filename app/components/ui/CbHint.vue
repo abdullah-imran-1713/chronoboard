@@ -2,7 +2,12 @@
   <span
     ref="rootRef"
     class="cb-hint"
-    :class="{ 'cb-hint--open': open, 'cb-hint--blocked': intercept }"
+    :class="{
+      'cb-hint--open': open,
+      'cb-hint--blocked': intercept,
+      'cb-hint--fill': layout === 'fill',
+      'cb-hint--fab': layout === 'fab',
+    }"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
     @focusin="onFocusIn"
@@ -46,10 +51,17 @@ const props = withDefaults(defineProps<{
   blocked?: boolean
   /** Auto-dismiss duration on touch (ms). */
   duration?: number
+  /**
+   * `inline` — default shrink-wrap.
+   * `fill` — stretch in grids (tiles / preset pills).
+   * `fab` — circular board FAB shell (no square wrapper).
+   */
+  layout?: 'inline' | 'fill' | 'fab'
 }>(), {
   mode: 'auto',
   blocked: false,
   duration: 2500,
+  layout: 'inline',
 })
 
 const PAD = 12
@@ -222,6 +234,36 @@ onUnmounted(() => {
   display: inline-flex;
   max-width: 100%;
   vertical-align: middle;
+}
+
+.cb-hint--fill {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+.cb-hint--fill .cb-hint-target {
+  display: block;
+  width: 100%;
+}
+
+.cb-hint--fill .cb-hint-target > :deep(*) {
+  width: 100%;
+}
+
+.cb-hint--fab {
+  display: flex;
+  flex: none;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  max-width: none;
+  border-radius: 999px;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.cb-hint--fab .cb-hint-target {
+  display: contents;
 }
 
 .cb-hint-target {

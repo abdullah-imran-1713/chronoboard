@@ -1,5 +1,5 @@
 <template>
-  <CbHint :text="isDark ? 'Light mode' : 'Dark mode'">
+  <CbHint layout="fab" :text="isDark ? 'Light mode' : 'Dark mode'">
     <button
       type="button"
       class="board-fab cb-icobtn appearance-toggle"
