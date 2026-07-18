@@ -356,6 +356,11 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   )
 }
 
+/** Weather (etc.) owns horizontal swipe + tap-to-reveal day arrows. */
+function isSwipeZoneTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest('[data-widget-swipe]'))
+}
+
 function canvasRect() {
   return canvasRef.value?.getBoundingClientRect() ?? null
 }
@@ -832,19 +837,25 @@ function onPointerDown(event: PointerEvent, id: string) {
   if (editingId.value === id) return
 
   const item = event.currentTarget as HTMLElement
+  const swipeZone = isSwipeZoneTarget(event.target)
   pressId = id
   pressItem = item
   pressExceededTapSlop = false
   pressStart = { x: event.clientX, y: event.clientY }
   activePointerId = event.pointerId
-  capturePointer(item, event.pointerId)
-  // Keep the board from stealing this gesture once a press starts
-  if (event.cancelable) event.preventDefault()
+
+  // Do not capture / preventDefault on [data-widget-swipe] — that retargets
+  // pointermove/up to the board item and kills weather tap-reveal + swipe.
+  // Capture starts later in beginDrag (long-press) if the user holds still.
+  if (!swipeZone) {
+    capturePointer(item, event.pointerId)
+    if (event.cancelable) event.preventDefault()
+  }
 
   const touchLike = isTouchLikePointer(event)
   const holdMs = touchLike ? LONG_PRESS_MS_COARSE : LONG_PRESS_MS_FINE
   pressTimer = setTimeout(() => {
-    if (pressId === id && pressItem) {
+    if (pressId === id && pressItem && !pressExceededTapSlop) {
       beginDrag(id, pressItem, pressStart.x, pressStart.y)
       clearPress()
     }
@@ -1039,6 +1050,11 @@ onUnmounted(() => {
   max-width: calc(100% - 1.25rem);
   transition: box-shadow 0.18s ease, outline-color 0.15s ease;
   cursor: grab;
+}
+
+/* Weather day swipe needs horizontal gestures; keep none only while dragging */
+.widget-board-item:has([data-widget-swipe]):not(.widget-board-item--dragging) {
+  touch-action: manipulation;
 }
 
 .widget-board-item--dragging {

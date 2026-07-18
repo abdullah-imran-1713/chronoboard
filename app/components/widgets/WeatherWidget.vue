@@ -36,6 +36,7 @@
       @pointermove="onSwipePointerMove"
       @pointerup="onSwipePointerUp"
       @pointercancel="onSwipePointerUp"
+      @lostpointercapture="onSwipeLostCapture"
       @mouseenter="onPaneEnter"
       @mouseleave="onPaneLeave"
     >
@@ -199,6 +200,7 @@ let swipeStartY = 0
 let swipeActive = false
 let swipeLocked: 'h' | 'v' | null = null
 let tapCandidate = false
+let swipePointerId: number | null = null
 
 const hasTomorrow = computed(() => Boolean(weather.value?.tomorrow))
 const canGoTomorrow = computed(() => dayIndex.value === 0 && hasTomorrow.value)
@@ -314,15 +316,32 @@ function onPanePointerDown(event: PointerEvent) {
     return
   }
 
+  // Reveal arrows on press (same moment as edit/X chrome) — don't wait for up
+  if (isTouchLike(event)) revealPager(true)
+
   swipeActive = true
   swipeLocked = null
   tapCandidate = true
   swipeStartX = event.clientX
   swipeStartY = event.clientY
+  swipePointerId = event.pointerId
+
+  const pane = event.currentTarget
+  if (pane instanceof HTMLElement) {
+    try {
+      if (!pane.hasPointerCapture?.(event.pointerId)) {
+        pane.setPointerCapture(event.pointerId)
+      }
+    }
+    catch {
+      // Older WebViews may throw if the pointer is already gone
+    }
+  }
 }
 
 function onSwipePointerMove(event: PointerEvent) {
   if (!swipeActive) return
+  if (swipePointerId != null && event.pointerId !== swipePointerId) return
   const dx = event.clientX - swipeStartX
   const dy = event.clientY - swipeStartY
   if (Math.hypot(dx, dy) >= 18) {
@@ -331,19 +350,46 @@ function onSwipePointerMove(event: PointerEvent) {
       swipeLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
     }
   }
+  // Keep the board from scrolling once we know this is a day swipe
+  if (swipeLocked === 'h' && event.cancelable) event.preventDefault()
+}
+
+function releaseSwipeCapture(event: PointerEvent) {
+  const pane = event.currentTarget
+  if (!(pane instanceof HTMLElement) || swipePointerId == null) return
+  try {
+    if (pane.hasPointerCapture?.(swipePointerId)) {
+      pane.releasePointerCapture(swipePointerId)
+    }
+  }
+  catch {
+    // ignore
+  }
+}
+
+function resetSwipeTracking() {
+  swipeActive = false
+  swipeLocked = null
+  tapCandidate = false
+  swipePointerId = null
+}
+
+function onSwipeLostCapture() {
+  // Board long-press drag (or another capture) took over — drop swipe gesture
+  resetSwipeTracking()
 }
 
 function onSwipePointerUp(event: PointerEvent) {
   if (!swipeActive) return
+  if (swipePointerId != null && event.pointerId !== swipePointerId) return
   const dx = event.clientX - swipeStartX
   const wasHorizontal = swipeLocked === 'h'
   const wasTap = tapCandidate && Math.hypot(dx, event.clientY - swipeStartY) < 18
-  swipeActive = false
-  swipeLocked = null
-  tapCandidate = false
+  releaseSwipeCapture(event)
+  resetSwipeTracking()
 
-  if (wasTap && isTouchLike(event)) {
-    revealPager(true)
+  if (wasTap) {
+    if (isTouchLike(event)) revealPager(true)
     return
   }
 
@@ -401,8 +447,8 @@ async function onRefresh() {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  /* Match board items — pan-y was canceling short taps before reveal */
-  touch-action: manipulation;
+  /* pan-x: horizontal day swipe; parent board item is touch-action:none */
+  touch-action: pan-x;
 }
 
 .weather-main {
