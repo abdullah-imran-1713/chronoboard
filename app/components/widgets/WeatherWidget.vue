@@ -33,10 +33,6 @@
       class="weather-pane"
       data-widget-swipe
       @pointerdown="onPanePointerDown"
-      @pointermove="onSwipePointerMove"
-      @pointerup="onSwipePointerUp"
-      @pointercancel="onSwipePointerUp"
-      @lostpointercapture="onSwipeLostCapture"
       @mouseenter="onPaneEnter"
       @mouseleave="onPaneLeave"
     >
@@ -193,7 +189,8 @@ const { isCoarse } = useCoarsePointer()
 const nowTick = ref(Date.now())
 let tickTimer: ReturnType<typeof setInterval> | null = null
 
-const SWIPE_THRESHOLD_PX = 42
+const SWIPE_THRESHOLD_PX = 36
+const SWIPE_LOCK_PX = 12
 const PAGER_REVEAL_MS = 2800
 let swipeStartX = 0
 let swipeStartY = 0
@@ -305,6 +302,20 @@ function goToday(event?: { pointerType?: string }) {
   if (isTouchLike(event)) revealPager(true)
 }
 
+function unbindSwipeWindow() {
+  window.removeEventListener('pointermove', onSwipePointerMove)
+  window.removeEventListener('pointerup', onSwipePointerUp)
+  window.removeEventListener('pointercancel', onSwipePointerUp)
+}
+
+function resetSwipeTracking() {
+  swipeActive = false
+  swipeLocked = null
+  tapCandidate = false
+  swipePointerId = null
+  unbindSwipeWindow()
+}
+
 function onPanePointerDown(event: PointerEvent) {
   if (event.button !== 0) return
   if (!hasTomorrow.value) return
@@ -316,9 +327,10 @@ function onPanePointerDown(event: PointerEvent) {
     return
   }
 
-  // Reveal arrows on press (same moment as edit/X chrome) — don't wait for up
+  // Reveal arrows on press (same moment as edit/X chrome)
   if (isTouchLike(event)) revealPager(true)
 
+  resetSwipeTracking()
   swipeActive = true
   swipeLocked = null
   tapCandidate = true
@@ -326,66 +338,43 @@ function onPanePointerDown(event: PointerEvent) {
   swipeStartY = event.clientY
   swipePointerId = event.pointerId
 
-  const pane = event.currentTarget
-  if (pane instanceof HTMLElement) {
-    try {
-      if (!pane.hasPointerCapture?.(event.pointerId)) {
-        pane.setPointerCapture(event.pointerId)
-      }
-    }
-    catch {
-      // Older WebViews may throw if the pointer is already gone
-    }
-  }
+  // Claim the touch early so the page/board cannot cancel mid-swipe
+  if (isTouchLike(event) && event.cancelable) event.preventDefault()
+
+  // Window listeners survive retargeting / touch-action quirks better than element capture
+  window.addEventListener('pointermove', onSwipePointerMove, { passive: false })
+  window.addEventListener('pointerup', onSwipePointerUp)
+  window.addEventListener('pointercancel', onSwipePointerUp)
 }
 
 function onSwipePointerMove(event: PointerEvent) {
   if (!swipeActive) return
   if (swipePointerId != null && event.pointerId !== swipePointerId) return
+
   const dx = event.clientX - swipeStartX
   const dy = event.clientY - swipeStartY
-  if (Math.hypot(dx, dy) >= 18) {
+  const dist = Math.hypot(dx, dy)
+
+  if (dist >= SWIPE_LOCK_PX) {
     tapCandidate = false
     if (!swipeLocked) {
-      swipeLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+      // Prefer horizontal when movement is clearly sideways (allow mild diagonal)
+      swipeLocked = Math.abs(dx) >= Math.abs(dy) * 0.65 ? 'h' : 'v'
     }
   }
-  // Keep the board from scrolling once we know this is a day swipe
+
   if (swipeLocked === 'h' && event.cancelable) event.preventDefault()
-}
-
-function releaseSwipeCapture(event: PointerEvent) {
-  const pane = event.currentTarget
-  if (!(pane instanceof HTMLElement) || swipePointerId == null) return
-  try {
-    if (pane.hasPointerCapture?.(swipePointerId)) {
-      pane.releasePointerCapture(swipePointerId)
-    }
-  }
-  catch {
-    // ignore
-  }
-}
-
-function resetSwipeTracking() {
-  swipeActive = false
-  swipeLocked = null
-  tapCandidate = false
-  swipePointerId = null
-}
-
-function onSwipeLostCapture() {
-  // Board long-press drag (or another capture) took over — drop swipe gesture
-  resetSwipeTracking()
 }
 
 function onSwipePointerUp(event: PointerEvent) {
   if (!swipeActive) return
   if (swipePointerId != null && event.pointerId !== swipePointerId) return
+
   const dx = event.clientX - swipeStartX
+  const dy = event.clientY - swipeStartY
   const wasHorizontal = swipeLocked === 'h'
-  const wasTap = tapCandidate && Math.hypot(dx, event.clientY - swipeStartY) < 18
-  releaseSwipeCapture(event)
+  const wasTap = tapCandidate && Math.hypot(dx, dy) < SWIPE_LOCK_PX
+
   resetSwipeTracking()
 
   if (wasTap) {
@@ -393,7 +382,9 @@ function onSwipePointerUp(event: PointerEvent) {
     return
   }
 
-  if (!wasHorizontal || Math.abs(dx) < SWIPE_THRESHOLD_PX) return
+  // Accept a decisive horizontal flick even if axis lock was late
+  const horizontalEnough = wasHorizontal || Math.abs(dx) >= Math.abs(dy) * 1.15
+  if (!horizontalEnough || Math.abs(dx) < SWIPE_THRESHOLD_PX) return
 
   if (isTouchLike(event)) revealPager(true)
   if (dx < 0) goTomorrow(event)
@@ -418,6 +409,7 @@ onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer)
   if (tickTimer) clearInterval(tickTimer)
   clearPagerHide()
+  resetSwipeTracking()
 })
 
 function showToast(message: string) {
@@ -447,8 +439,9 @@ async function onRefresh() {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  /* pan-x: horizontal day swipe; parent board item is touch-action:none */
-  touch-action: pan-x;
+  /* none — custom day swipe; pan-x would hand the gesture to the browser */
+  touch-action: none;
+  cursor: grab;
 }
 
 .weather-main {
