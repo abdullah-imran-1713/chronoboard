@@ -239,8 +239,10 @@ useKeyboardShortcuts({
   top: 50dvh;
   /* Hug clock/date — grow with font size, never force the time onto two lines */
   width: max-content;
-  max-width: calc(100% - 1.5rem);
-  padding-inline: max(0.75rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  max-width: min(100% - 1.5rem, 100vw - 1.5rem);
+  padding-inline: max(0.5rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .board-hero-stack {

@@ -6,7 +6,7 @@
   >
     <span class="sr-only" aria-live="polite" aria-atomic="true">{{ spokenTime }}</span>
     <div
-      class="font-clock flex flex-nowrap items-baseline justify-center whitespace-nowrap clock-effects max-w-[100vw] px-2"
+      class="font-clock clock-face flex flex-nowrap items-baseline justify-center whitespace-nowrap clock-effects"
       :style="{
         fontSize: 'var(--font-size-clock)',
         fontWeight: 'var(--font-weight-clock)',
@@ -86,3 +86,11 @@ const spokenTime = computed(() => {
   return `Current time: ${parts.join(', ')}`
 })
 </script>
+
+<style scoped>
+.clock-face {
+  max-width: 100%;
+  padding-inline: 0.25rem;
+  box-sizing: border-box;
+}
+</style>
