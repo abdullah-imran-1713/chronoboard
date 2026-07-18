@@ -211,7 +211,28 @@ let pressStart = { x: 0, y: 0 }
 let pressItem: HTMLElement | null = null
 /** True when finger moved past tap slop (swipe) — cancel pending long-press drag */
 let pressExceededTapSlop = false
+/** Active pointer for press/drag — ignore other pointers; used for setPointerCapture */
+let activePointerId: number | null = null
 let chromeTimer: ReturnType<typeof setTimeout> | null = null
+
+function capturePointer(el: HTMLElement, pointerId: number) {
+  try {
+    if (!el.hasPointerCapture?.(pointerId)) el.setPointerCapture(pointerId)
+  }
+  catch {
+    // Older WebViews may throw if the pointer is already gone
+  }
+}
+
+function releasePointer(el: HTMLElement | null, pointerId: number | null) {
+  if (!el || pointerId == null) return
+  try {
+    if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
+  }
+  catch {
+    // ignore
+  }
+}
 
 const widgetModules = import.meta.glob('./*Widget.vue')
 const componentCache = new Map<string, Component>()
@@ -796,7 +817,10 @@ function beginDrag(id: string, item: HTMLElement, clientX: number, clientY: numb
   blockedIds.value = new Set()
   updateHeroHint()
 
-  window.addEventListener('pointermove', onPointerMove)
+  if (activePointerId != null) capturePointer(item, activePointerId)
+
+  // passive:false so we can preventDefault and stop the board from scrolling
+  window.addEventListener('pointermove', onPointerMove, { passive: false })
   window.addEventListener('pointerup', onPointerUp)
   window.addEventListener('pointercancel', onPointerUp)
 }
@@ -812,6 +836,10 @@ function onPointerDown(event: PointerEvent, id: string) {
   pressItem = item
   pressExceededTapSlop = false
   pressStart = { x: event.clientX, y: event.clientY }
+  activePointerId = event.pointerId
+  capturePointer(item, event.pointerId)
+  // Keep the board from stealing this gesture once a press starts
+  if (event.cancelable) event.preventDefault()
 
   const touchLike = isTouchLikePointer(event)
   const holdMs = touchLike ? LONG_PRESS_MS_COARSE : LONG_PRESS_MS_FINE
@@ -822,13 +850,14 @@ function onPointerDown(event: PointerEvent, id: string) {
     }
   }, holdMs)
 
-  window.addEventListener('pointermove', onPressMove)
+  window.addEventListener('pointermove', onPressMove, { passive: false })
   window.addEventListener('pointerup', onPressUp)
   window.addEventListener('pointercancel', onPressCancel)
 }
 
 function onPressMove(event: PointerEvent) {
   if (!pressId || !pressItem) return
+  if (activePointerId != null && event.pointerId !== activePointerId) return
   const dist = Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y)
 
   // Touch: finger wobble must not start a drag. Drag only via long-press.
@@ -852,12 +881,22 @@ function onPressMove(event: PointerEvent) {
   onPointerMove(event)
 }
 
-function onPressUp() {
+function onPressUp(event: PointerEvent) {
+  if (activePointerId != null && event.pointerId !== activePointerId) return
+  const item = pressItem
+  const pid = activePointerId
   clearPress()
+  releasePointer(item, pid)
+  activePointerId = null
 }
 
-function onPressCancel() {
+function onPressCancel(event: PointerEvent) {
+  if (activePointerId != null && event.pointerId !== activePointerId) return
+  const item = pressItem
+  const pid = activePointerId
   clearPress()
+  releasePointer(item, pid)
+  activePointerId = null
 }
 
 /**
@@ -878,6 +917,10 @@ function onChromeWake(event: PointerEvent, id: string) {
 
 function onPointerMove(event: PointerEvent) {
   if (!draggingId.value) return
+  if (activePointerId != null && event.pointerId !== activePointerId) return
+  // Stop page/board scroll from eating the drag (esp. vertical moves)
+  if (event.cancelable) event.preventDefault()
+
   const rect = canvasRect()
   const el = canvasRef.value?.querySelector(
     `[data-widget-id="${draggingId.value}"]`,
@@ -889,10 +932,17 @@ function onPointerMove(event: PointerEvent) {
   const { left, top } = clampToCanvas(snap(rawLeft), snap(rawTop), el)
   livePosition.value = toPercent(left, top)
   evaluatePlacement(draggingId.value, left, top, el)
-  scheduleExtentSync()
+  // Do NOT syncBoardExtent while dragging — height jumps cancel the gesture
 }
 
-function onPointerUp() {
+function onPointerUp(event: PointerEvent) {
+  if (activePointerId != null && event.pointerId !== activePointerId) return
+
+  const el = draggingId.value
+    ? canvasRef.value?.querySelector(`[data-widget-id="${draggingId.value}"]`) as HTMLElement | null
+    : null
+  const pid = activePointerId
+
   if (draggingId.value && livePosition.value) {
     if (placementInvalid.value && dragOrigin.value) {
       livePosition.value = { ...dragOrigin.value }
@@ -909,7 +959,9 @@ function onPointerUp() {
   placementInvalid.value = false
   blockedIds.value = new Set()
   heroHintStyle.value = null
+  activePointerId = null
 
+  releasePointer(el, pid)
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
   window.removeEventListener('pointercancel', onPointerUp)
@@ -978,8 +1030,10 @@ onUnmounted(() => {
 
 .widget-board-item {
   position: absolute;
-  /* Prefer taps over vertical pan steal — pan-y was canceling pointerup on mobile */
-  touch-action: manipulation;
+  /* none — parent board scroll must not steal vertical drag after long-press */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
   z-index: 1;
   width: max-content;
   max-width: calc(100% - 1.25rem);

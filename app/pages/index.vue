@@ -229,6 +229,13 @@ useKeyboardShortcuts({
   -ms-overflow-style: none;
 }
 
+/* Lock vertical scroll while a widget is being dragged */
+.board-shell:has(.widget-canvas[data-dragging='true']) {
+  overflow-y: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 .board-shell::-webkit-scrollbar {
   width: 0;
   height: 0;
