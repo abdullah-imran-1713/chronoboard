@@ -12,7 +12,7 @@
       {{ label }}
     </label>
 
-    <div class="base-select-field relative" :class="label ? 'w-[150px]' : 'w-full'">
+    <div class="base-select-field relative min-w-0" :class="label ? 'flex-1' : 'w-full'">
       <button
         type="button"
         class="cb-field w-full"
@@ -119,7 +119,6 @@ onUnmounted(() => {
 }
 
 .base-select-field {
-  flex: none;
   min-width: 0;
 }
 </style>
