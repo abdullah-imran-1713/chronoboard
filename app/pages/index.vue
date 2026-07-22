@@ -121,8 +121,12 @@
     />
 
     <IslamicFeaturesModal />
+    <LayoutResetModal />
     <DesktopExperienceTip />
+    <PwaInstallPrompt />
     <BrandSplash />
+    <FocusCompleteOverlay />
+    <BoardCalendarPopover />
   </main>
 </template>
 
@@ -140,6 +144,11 @@ const { isFullscreen, toggle: toggleFullscreen } = useFullscreen()
 const { isIdle } = useCursorAutoHide(3000)
 
 const { open: islamicModalOpen, dismiss: dismissIslamicModal } = useIslamicFeatures()
+const {
+  open: layoutResetOpen,
+  dismiss: dismissLayoutReset,
+  requestResetFromShortcut,
+} = useLayoutReset()
 
 const boardHeightPx = ref(typeof window !== 'undefined' ? window.innerHeight : 800)
 const pageMinHeight = computed(() =>
@@ -205,9 +214,14 @@ function fabButtonStyle(active: boolean) {
 
 useKeyboardShortcuts({
   f: toggleFullscreen,
+  r: requestResetFromShortcut,
   s: toggleSettings,
   w: toggleWidgets,
   escape: () => {
+    if (layoutResetOpen.value) {
+      dismissLayoutReset()
+      return
+    }
     if (islamicModalOpen.value) {
       dismissIslamicModal()
       return

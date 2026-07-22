@@ -85,6 +85,7 @@ async function fetchPrayersShared(
         Sunrise: cleanTime(timings.Sunrise ?? ''),
         Dhuhr: cleanTime(timings.Dhuhr ?? ''),
         Asr: cleanTime(timings.Asr ?? ''),
+        Sunset: cleanTime(timings.Sunset ?? ''),
         Maghrib: cleanTime(timings.Maghrib ?? ''),
         Isha: cleanTime(timings.Isha ?? ''),
       }
@@ -130,6 +131,7 @@ export function usePrayerTimes() {
       Sunrise: formatPrayerClockTime(sharedPrayers.value.Sunrise, format),
       Dhuhr: formatPrayerClockTime(sharedPrayers.value.Dhuhr, format),
       Asr: formatPrayerClockTime(sharedPrayers.value.Asr, format),
+      Sunset: formatPrayerClockTime(sharedPrayers.value.Sunset, format),
       Maghrib: formatPrayerClockTime(sharedPrayers.value.Maghrib, format),
       Isha: formatPrayerClockTime(sharedPrayers.value.Isha, format),
     }

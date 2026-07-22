@@ -10,6 +10,9 @@ export default defineNuxtConfig({
     build: {
       target: 'es2019',
     },
+    optimizeDeps: {
+      include: ['workbox-window'],
+    },
   },
 
   // Vercel/Nuxt: also set here so Permissions-Policy survives nitro output merge
@@ -137,14 +140,26 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
+    registerWebManifestInRouteRules: true,
+    includeAssets: [
+      'favicon.ico',
+      'favicon.png',
+      'apple-touch-icon.png',
+      'icons/icon-192.png',
+      'icons/icon-512.png',
+    ],
     manifest: {
+      id: '/',
       name: 'ChronoBoard — Digital Clock & Dashboard',
       short_name: 'ChronoBoard',
       description: 'A beautiful, customizable digital clock and productivity dashboard',
       theme_color: '#000000',
       background_color: '#000000',
-      display: 'fullscreen',
+      display: 'standalone',
       orientation: 'any',
+      start_url: '/',
+      scope: '/',
+      lang: 'en',
       categories: ['productivity', 'utilities'],
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -154,7 +169,14 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+    },
+    // Service worker + installability also work while developing (localhost)
+    devOptions: {
+      enabled: true,
+      suppressWarnings: true,
+      type: 'module',
+      navigateFallbackAllowlist: [/^\/$/],
     },
   },
 })

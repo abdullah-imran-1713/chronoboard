@@ -25,6 +25,10 @@ export function usePanelDismiss(
     if (target.closest('[data-islamic-features-modal]')) return
     // Confirm dialogs teleported to body
     if (target.closest('[data-confirm-dialog]')) return
+    // Layout reset confirm (same family as islamic modal)
+    if (target.closest('[data-layout-reset-modal]')) return
+    // PWA install tip teleported to body
+    if (target.closest('[data-pwa-install-prompt]')) return
 
     const panel = panelRef.value
     if (panel?.contains(target)) return

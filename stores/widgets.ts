@@ -16,8 +16,8 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
   },
   {
     id: 'pomodoro',
-    name: 'Pomodoro Timer',
-    description: 'Focus timer with work/break cycles',
+    name: 'Focus',
+    description: 'Custom focus timer with breaks',
     icon: 'mdi:timer-outline',
     component: 'PomodoroWidget',
     defaultEnabled: false,

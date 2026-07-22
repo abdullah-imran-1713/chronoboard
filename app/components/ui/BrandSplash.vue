@@ -10,8 +10,15 @@
         @click="finish"
       >
         <div class="brand-splash-stage" :data-phase="phase">
+          <!--
+            Outer: radius + overflow + opacity only.
+            Inner: scale motion. Separating these avoids mobile WebKit
+            clip bugs that looked like a top→bottom wipe.
+          -->
           <div class="brand-splash-mark" aria-hidden="true">
-            <BrandMark />
+            <div class="brand-splash-mark-motion">
+              <BrandMark decoding="sync" fetchpriority="high" />
+            </div>
           </div>
           <p class="brand-splash-name">
             <BrandWordmark />
@@ -30,6 +37,7 @@
  * Board stays gated (html.brand-splash-pending) until this finishes,
  * so the clock never flashes before the logo.
  */
+const MARK_SRC = '/icons/chronoboard-mark-512.png'
 const HOLD_MS = 1200
 const FADE_MS = 520
 /** Hard unlock if something stalls — never leave the board hidden forever */
@@ -88,12 +96,34 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-onMounted(() => {
-  if (hasSeenSplash()) {
-    releaseGate()
-    return
+/** Decode mark fully before animating — avoids partial paint on mobile. */
+async function preloadMark(): Promise<void> {
+  if (!import.meta.client) return
+  try {
+    const img = new Image()
+    img.src = MARK_SRC
+    if (typeof img.decode === 'function') {
+      await img.decode()
+      return
+    }
+    await new Promise<void>((resolve) => {
+      img.onload = () => resolve()
+      img.onerror = () => resolve()
+    })
   }
+  catch {
+    // Still show splash — better a late image than a stuck gate
+  }
+}
 
+/** Two frames so the enter state is painted before hold (mobile-safe). */
+function afterPaint(fn: () => void) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(fn)
+  })
+}
+
+async function startSplash() {
   visible.value = true
   phase.value = 'enter'
 
@@ -113,15 +143,27 @@ onMounted(() => {
     releaseGate()
   }, SAFETY_UNLOCK_MS)
 
+  await preloadMark()
+
   if (prefersReducedMotion()) {
+    phase.value = 'hold'
     holdTimer = setTimeout(finish, 650)
     return
   }
 
-  requestAnimationFrame(() => {
+  afterPaint(() => {
+    if (!visible.value || phase.value === 'exit') return
     phase.value = 'hold'
   })
   holdTimer = setTimeout(finish, HOLD_MS + 380)
+}
+
+onMounted(() => {
+  if (hasSeenSplash()) {
+    releaseGate()
+    return
+  }
+  void startSplash()
 })
 
 onUnmounted(() => {
@@ -157,11 +199,16 @@ onUnmounted(() => {
   border-radius: 28%;
   overflow: hidden;
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.38);
-  transform: scale(0.94);
   opacity: 0;
-  transition:
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.55s ease;
+  transition: opacity 0.55s ease;
+}
+
+.brand-splash-mark-motion {
+  width: 100%;
+  height: 100%;
+  transform: scale(0.94);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 .brand-splash-name {
@@ -180,15 +227,24 @@ onUnmounted(() => {
 .brand-splash-stage[data-phase='hold'] .brand-splash-mark,
 .brand-splash-stage[data-phase='hold'] .brand-splash-name {
   opacity: 1;
+}
+
+.brand-splash-stage[data-phase='hold'] .brand-splash-mark-motion,
+.brand-splash-stage[data-phase='hold'] .brand-splash-name {
   transform: none;
 }
 
 /* Exit: settle into the board — soft fade + tiny scale-down (not bounce out) */
 .brand-splash-stage[data-phase='exit'] .brand-splash-mark {
   opacity: 0;
+  transition-duration: 0.5s;
+  transition-timing-function: ease;
+}
+
+.brand-splash-stage[data-phase='exit'] .brand-splash-mark-motion {
   transform: scale(0.97);
-  transition-duration: 0.5s, 0.5s;
-  transition-timing-function: ease, ease;
+  transition-duration: 0.5s;
+  transition-timing-function: ease;
 }
 
 .brand-splash-stage[data-phase='exit'] .brand-splash-name {
@@ -212,7 +268,12 @@ onUnmounted(() => {
   .brand-splash-mark,
   .brand-splash-name {
     transition: opacity 0.22s ease;
+  }
+
+  .brand-splash-mark-motion,
+  .brand-splash-name {
     transform: none !important;
+    transition: none;
   }
 
   .brand-splash-stage[data-phase='hold'] .brand-splash-mark,
