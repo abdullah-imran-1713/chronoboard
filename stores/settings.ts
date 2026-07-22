@@ -27,11 +27,6 @@ interface SettingsState {
   hijriLocale: HijriLocale
   showHijriDate: boolean
   showDate: boolean
-  /**
-   * When true, Hijri day rolls at Maghrib (not midnight).
-   * Needs location; falls back to midnight if Maghrib unavailable.
-   */
-  hijriChangeAtMaghrib: boolean
   islamicFeaturesPreference: IslamicFeaturesPreference
   /** Asr calculation: Shafi (standard) or Hanafi */
   prayerAsrSchool: PrayerAsrSchool
@@ -63,7 +58,6 @@ export const useSettingsStore = defineStore('settings', {
     hijriLocale: 'en',
     showHijriDate: false,
     showDate: true,
-    hijriChangeAtMaghrib: true,
     islamicFeaturesPreference: null,
     prayerAsrSchool: 'shafi',
     showPrayerSunriseSunset: true,
@@ -99,10 +93,6 @@ export const useSettingsStore = defineStore('settings', {
 
     toggleHijriDate() {
       this.showHijriDate = !this.showHijriDate
-    },
-
-    setHijriChangeAtMaghrib(enabled: boolean) {
-      this.hijriChangeAtMaghrib = enabled
     },
 
     setIslamicFeaturesPreference(value: IslamicFeaturesPreference) {

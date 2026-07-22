@@ -51,13 +51,6 @@
       @update:model-value="onHijriToggle"
     />
 
-    <BaseToggle
-      v-if="!isHidden && settings.showHijriDate"
-      :model-value="settings.hijriChangeAtMaghrib"
-      label="Hijri day changes at Maghrib"
-      @update:model-value="settings.setHijriChangeAtMaghrib"
-    />
-
     <div
       v-else-if="isHidden"
       class="flex flex-col gap-2 rounded-lg p-3"
