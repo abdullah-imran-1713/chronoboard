@@ -23,7 +23,7 @@
       </div>
 
       <div
-        v-for="name in PRAYER_DISPLAY_ORDER"
+        v-for="name in visiblePrayerNames"
         :key="name"
         class="flex justify-between text-sm font-ui gap-2"
         :style="{
@@ -35,7 +35,19 @@
         <span class="tabular-nums">{{ prayers[name] }}</span>
       </div>
 
-      <div class="flex justify-center pt-1">
+      <div class="prayer-footer pt-1">
+        <CbHint :text="solarHintText">
+          <button
+            type="button"
+            class="prayer-solar-info cb-icobtn"
+            :aria-pressed="showSunriseSunset"
+            :aria-label="solarHintText"
+            @click.stop="toggleSunriseSunset"
+          >
+            <Icon name="mdi:weather-sunset" size="15" />
+          </button>
+        </CbHint>
+
         <div
           class="prayer-school-track"
           role="group"
@@ -64,9 +76,27 @@
 </template>
 
 <script setup lang="ts">
-import { PRAYER_DISPLAY_ORDER } from '../../../types/prayer'
+import { PRAYER_DISPLAY_ORDER, SOLAR_TIME_NAMES, type PrayerName } from '../../../types/prayer'
 
+const settings = useSettingsStore()
 const { prayers, nextPrayer, loading, error, asrSchool, init, setAsrSchool } = usePrayerTimes()
+
+const { showPrayerSunriseSunset: showSunriseSunset } = storeToRefs(settings)
+
+const visiblePrayerNames = computed((): PrayerName[] => {
+  if (showSunriseSunset.value) return PRAYER_DISPLAY_ORDER
+  return PRAYER_DISPLAY_ORDER.filter(name => !SOLAR_TIME_NAMES.has(name))
+})
+
+const solarHintText = computed(() =>
+  showSunriseSunset.value
+    ? 'Hide sunrise & sunset'
+    : 'Show sunrise & sunset',
+)
+
+function toggleSunriseSunset() {
+  settings.setShowPrayerSunriseSunset(!showSunriseSunset.value)
+}
 
 onMounted(() => {
   init()
@@ -74,6 +104,34 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.prayer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.prayer-solar-info {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--color-muted-rgb), 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  background: rgba(var(--color-muted-rgb), 0.12);
+  cursor: pointer;
+  padding: 0;
+}
+
+.prayer-solar-info:hover,
+.prayer-solar-info:focus-visible {
+  color: var(--color-text);
+  background: rgba(var(--color-muted-rgb), 0.2);
+  outline: none;
+}
+
 .prayer-school-track {
   display: inline-flex;
   align-items: center;

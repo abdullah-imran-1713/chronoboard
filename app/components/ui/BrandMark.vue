@@ -5,13 +5,22 @@
     alt=""
     width="512"
     height="512"
-    decoding="async"
+    :decoding="decoding"
+    :fetchpriority="fetchpriority"
     :draggable="false"
   >
 </template>
 
 <script setup lang="ts">
 defineOptions({ inheritAttrs: true })
+
+withDefaults(defineProps<{
+  decoding?: 'async' | 'sync' | 'auto'
+  fetchpriority?: 'high' | 'low' | 'auto'
+}>(), {
+  decoding: 'async',
+  fetchpriority: 'auto',
+})
 </script>
 
 <style scoped>

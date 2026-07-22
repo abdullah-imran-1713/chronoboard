@@ -5,22 +5,28 @@ export interface PrayerTimes {
   Sunrise: string
   Dhuhr: string
   Asr: string
+  Sunset: string
   Maghrib: string
   Isha: string
 }
 
 export type PrayerName = keyof PrayerTimes
 
+/** Full list including solar markers (Sunrise / Sunset) */
 export const PRAYER_DISPLAY_ORDER: PrayerName[] = [
   'Fajr',
   'Sunrise',
   'Dhuhr',
   'Asr',
+  'Sunset',
   'Maghrib',
   'Isha',
 ]
 
-export const NEXT_PRAYER_ORDER = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const
+export const SOLAR_TIME_NAMES: ReadonlySet<PrayerName> = new Set(['Sunrise', 'Sunset'])
+
+/** Includes Sunrise so Fajr window counts down until sunrise, not Dhuhr */
+export const NEXT_PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const
 
 export type NextPrayerName = typeof NEXT_PRAYER_ORDER[number]
 

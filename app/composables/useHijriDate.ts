@@ -1,20 +1,23 @@
 import { ref, computed, watch } from 'vue'
 import type { Ref } from 'vue'
 import type { HijriLocale } from '../../types/date'
+import { effectiveGregorianForHijri, useMaghribForHijri } from './useMaghribForHijri'
 
 interface UseHijriDateOptions {
   now: Ref<Date>
   locale: Ref<HijriLocale>
 }
 
-interface HijriMonthNames {
+export interface HijriMonthNames {
   en: string
   ar: string
 }
 
-interface HijriCacheEntry {
+export interface HijriCacheEntry {
   day: string
   month: HijriMonthNames
+  /** Aladhan month number 1–12 when known */
+  monthNumber?: number
   year: string
 }
 
@@ -24,7 +27,7 @@ interface AladhanGToHResponse {
   data: {
     hijri: {
       day: string
-      month: HijriMonthNames
+      month: HijriMonthNames & { number?: number }
       year: string
     }
   }
@@ -37,7 +40,7 @@ const intlLocaleMap: Record<HijriLocale, string> = {
   ar: 'ar-u-ca-islamic-civil',
 }
 
-function formatGregorianKey(date: Date): string {
+export function formatGregorianKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0')
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const year = date.getFullYear()
@@ -68,7 +71,7 @@ function intlFallback(date: Date, locale: HijriLocale): HijriCacheEntry {
   }
 }
 
-async function fetchHijriFromApi(gregorianKey: string): Promise<HijriCacheEntry> {
+export async function fetchHijriFromApi(gregorianKey: string): Promise<HijriCacheEntry> {
   const cached = hijriCache.get(gregorianKey)
   if (cached) return cached
 
@@ -79,7 +82,8 @@ async function fetchHijriFromApi(gregorianKey: string): Promise<HijriCacheEntry>
   const hijri = response.data.hijri
   const entry: HijriCacheEntry = {
     day: hijri.day,
-    month: hijri.month,
+    month: { en: hijri.month.en, ar: hijri.month.ar },
+    monthNumber: hijri.month.number,
     year: hijri.year,
   }
 
@@ -88,29 +92,45 @@ async function fetchHijriFromApi(gregorianKey: string): Promise<HijriCacheEntry>
 }
 
 export function useHijriDate(options: UseHijriDateOptions) {
+  const settings = useSettingsStore()
+  const { ensureMaghribMinutes, maghribByDay } = useMaghribForHijri()
+
   const hijriData = ref<HijriCacheEntry | null>(null)
   const loading = ref(false)
   const error = ref(false)
+  const maghribMinutes = ref<number | null>(null)
 
-  async function loadHijri(date: Date) {
-    const gregorianKey = formatGregorianKey(date)
-    const cached = hijriCache.get(gregorianKey)
-
-    if (cached) {
-      hijriData.value = cached
-      error.value = false
-      return
-    }
-
+  async function loadHijri() {
+    const now = options.now.value
     loading.value = true
     error.value = false
 
     try {
+      if (settings.hijriChangeAtMaghrib) {
+        maghribMinutes.value = await ensureMaghribMinutes(now)
+      }
+      else {
+        maghribMinutes.value = null
+      }
+
+      const civil = effectiveGregorianForHijri(
+        now,
+        maghribMinutes.value,
+        settings.hijriChangeAtMaghrib,
+      )
+      const gregorianKey = formatGregorianKey(civil)
+      const cached = hijriCache.get(gregorianKey)
+
+      if (cached) {
+        hijriData.value = cached
+        return
+      }
+
       hijriData.value = await fetchHijriFromApi(gregorianKey)
     }
     catch {
       error.value = true
-      hijriData.value = intlFallback(date, options.locale.value)
+      hijriData.value = intlFallback(options.now.value, options.locale.value)
     }
     finally {
       loading.value = false
@@ -118,9 +138,15 @@ export function useHijriDate(options: UseHijriDateOptions) {
   }
 
   watch(
-    () => formatGregorianKey(options.now.value),
+    () => [
+      formatGregorianKey(options.now.value),
+      options.now.value.getHours(),
+      options.now.value.getMinutes(),
+      settings.hijriChangeAtMaghrib,
+      maghribByDay.value[formatGregorianKey(options.now.value)] ?? null,
+    ],
     () => {
-      loadHijri(options.now.value)
+      void loadHijri()
     },
     { immediate: true },
   )

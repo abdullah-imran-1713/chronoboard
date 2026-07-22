@@ -11,7 +11,7 @@
             opacity: canResetLayout ? 1 : 0.35,
           }"
           :disabled="!canResetLayout"
-          @click="resetPositions"
+          @click="requestReset"
         >
           Reset layout
         </button>
@@ -74,8 +74,8 @@
 import type { WidgetCategory } from '../../../types/widget'
 
 const widgetStore = useWidgetStore()
-const layoutStore = useLayoutStore()
 const { isHidden, onReligiousWidgetToggle, migrateIfNeeded } = useIslamicFeatures()
+const { canResetLayout, requestReset } = useLayoutReset()
 
 const toastMessage = ref('')
 let toastTimer: ReturnType<typeof setTimeout> | null = null
@@ -90,7 +90,7 @@ const categoryLabels: Record<WidgetCategory, string> = {
 
 const SHORT_LABELS: Record<string, string> = {
   'World Clock': 'World',
-  'Pomodoro Timer': 'Pomodoro',
+  'Focus': 'Focus',
   'Quick Notes': 'Notes',
   'Day Progress': 'Progress',
   'Quote of the Day': 'Quote',
@@ -107,10 +107,6 @@ const visibleCategories = computed(() => {
   filtered.religious = []
   return filtered
 })
-
-const canResetLayout = computed(() =>
-  widgetStore.activeWidgets.some(w => layoutStore.wasMoved(w.id)),
-)
 
 const resetTitle = computed(() => {
   if (widgetStore.activeWidgets.length === 0) return 'Enable a widget first'
@@ -129,15 +125,6 @@ function showToast(message: string) {
     toastMessage.value = ''
     toastTimer = null
   }, 2200)
-}
-
-function resetPositions() {
-  if (!canResetLayout.value) return
-  layoutStore.resetWidgetPositions()
-  window.dispatchEvent(new CustomEvent('chronoboard:repack-widgets', {
-    detail: { forceAll: true },
-  }))
-  showToast('Layout reset')
 }
 
 const LOCATION_DENIED_TOAST = 'Allow location to add this widget'

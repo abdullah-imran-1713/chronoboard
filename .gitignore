@@ -23,3 +23,6 @@ logs
 .env.*
 !.env.example
 .vercel
+
+# Local Cursor / agent rules (not for the repo)
+.cursor/

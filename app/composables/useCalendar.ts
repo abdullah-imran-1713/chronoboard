@@ -69,7 +69,8 @@ export function useCalendar() {
     if (viewMonth.value === 0) {
       viewMonth.value = 11
       viewYear.value--
-    } else {
+    }
+    else {
       viewMonth.value--
     }
   }
@@ -78,9 +79,15 @@ export function useCalendar() {
     if (viewMonth.value === 11) {
       viewMonth.value = 0
       viewYear.value++
-    } else {
+    }
+    else {
       viewMonth.value++
     }
+  }
+
+  function goToToday() {
+    viewYear.value = now.value.getFullYear()
+    viewMonth.value = now.value.getMonth()
   }
 
   const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -91,5 +98,6 @@ export function useCalendar() {
     weekdayLabels,
     prevMonth,
     nextMonth,
+    goToToday,
   }
 }
