@@ -92,7 +92,6 @@ export async function fetchHijriFromApi(gregorianKey: string): Promise<HijriCach
 }
 
 export function useHijriDate(options: UseHijriDateOptions) {
-  const settings = useSettingsStore()
   const { ensureMaghribMinutes, maghribByDay } = useMaghribForHijri()
 
   const hijriData = ref<HijriCacheEntry | null>(null)
@@ -106,17 +105,11 @@ export function useHijriDate(options: UseHijriDateOptions) {
     error.value = false
 
     try {
-      if (settings.hijriChangeAtMaghrib) {
-        maghribMinutes.value = await ensureMaghribMinutes(now)
-      }
-      else {
-        maghribMinutes.value = null
-      }
+      maghribMinutes.value = await ensureMaghribMinutes(now)
 
       const civil = effectiveGregorianForHijri(
         now,
         maghribMinutes.value,
-        settings.hijriChangeAtMaghrib,
       )
       const gregorianKey = formatGregorianKey(civil)
       const cached = hijriCache.get(gregorianKey)
@@ -142,7 +135,6 @@ export function useHijriDate(options: UseHijriDateOptions) {
       formatGregorianKey(options.now.value),
       options.now.value.getHours(),
       options.now.value.getMinutes(),
-      settings.hijriChangeAtMaghrib,
       maghribByDay.value[formatGregorianKey(options.now.value)] ?? null,
     ],
     () => {

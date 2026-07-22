@@ -104,7 +104,6 @@ function buildWeeks(
 
 export function useHijriCalendar(locale: Ref<HijriLocale>) {
   const now = inject(NOW_INJECTION_KEY)!
-  const settings = useSettingsStore()
   const { ensureMaghribMinutes } = useMaghribForHijri()
 
   const viewYear = ref(1448)
@@ -129,15 +128,8 @@ export function useHijriCalendar(locale: Ref<HijriLocale>) {
   )
 
   async function loadTodayAnchor() {
-    let maghrib: number | null = null
-    if (settings.hijriChangeAtMaghrib) {
-      maghrib = await ensureMaghribMinutes(now.value)
-    }
-    const civil = effectiveGregorianForHijri(
-      now.value,
-      maghrib,
-      settings.hijriChangeAtMaghrib,
-    )
+    const maghrib = await ensureMaghribMinutes(now.value)
+    const civil = effectiveGregorianForHijri(now.value, maghrib)
     const entry = await fetchHijriFromApi(formatGregorianKey(civil))
     todayDay.value = Number(entry.day)
     todayYear.value = Number(entry.year)

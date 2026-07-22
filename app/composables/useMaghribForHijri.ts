@@ -27,14 +27,14 @@ let lastFetchKey = ''
 /**
  * Islamic day starts at Maghrib.
  * After Maghrib on civil day D → use gToH(D+1); before Maghrib → gToH(D).
+ * If Maghrib is unavailable (no location), falls back to midnight civil day.
  */
 export function effectiveGregorianForHijri(
   now: Date,
   maghribMinutes: number | null,
-  changeAtMaghrib: boolean,
 ): Date {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  if (!changeAtMaghrib || maghribMinutes == null) return d
+  if (maghribMinutes == null) return d
 
   const current = now.getHours() * 60 + now.getMinutes()
   if (current >= maghribMinutes) {
